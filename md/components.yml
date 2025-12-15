@@ -1,0 +1,36 @@
+components:
+  - name: string                     # Unique name for the component
+    type: string                     # Adapter type (e.g. terraform, docker_compose, aws_s3_bucket)
+    description: string              # Optional human-readable description
+
+    provider: string                 # Optional (e.g. aws, gcp, azure, onprem)
+    target: string                   # Where to deploy/run (e.g. local, remote, ecs, kubernetes, aws)
+    strategy: string                 # How to deploy/run (e.g. direct, daemonized, redeploy)
+
+    depends_on: [string, ...]        # Optional dependency list of other component names
+    ttl_hours: int                   # Optional per-component TTL override
+
+    source:
+      mode: "inline" | "file" | "directory"   # How to load the definition
+      path: "path/to/file/or/dir"             # Used for file/directory
+      content: |                              # Used when inline
+        <string or IaC code block>
+
+    properties:                  # Adapter/runtime-specific configuration
+      key: value
+      key2: value
+
+    hooks:                       # Lifecycle scripts tied to this component
+      pre_create:
+        - "scripts/prep.sh"
+      post_create:
+        - "scripts/check_health.sh"
+      pre_destroy:
+        - "scripts/backup.sh"
+      post_destroy:
+        - "scripts/cleanup.sh"
+
+    outputs:                     # Names of expected outputs for interpolation or reporting
+      - "endpoint"
+      - "public_ip"
+      - "bucket_name"

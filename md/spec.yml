@@ -1,0 +1,172 @@
+version: "orch.io/1.0" # ORCH manifest specification version
+
+# ------------------------------------------------------------------------------
+# User Inputs
+# ------------------------------------------------------------------------------
+inputs:
+  app_image:
+    description: "Docker image for the application"
+    type: "string"
+    default: "myapp:latest"
+
+  db_password:
+    description: "Password for the database"
+    type: "string"
+    sensitive: true
+
+  instance_type:
+    description: "Instance type for test compute nodes"
+    type: "string"
+    default: "t3.small"
+
+# ------------------------------------------------------------------------------
+# Metadata
+# ------------------------------------------------------------------------------
+metadata:
+  id: "ticket-1234"
+  description: "Sandbox for feature XYZ testing"
+
+  owner:
+    name: "Jane Doe"
+    email: "jane.doe@example.com"
+
+  labels:
+    project: "myapp"
+    environment: "feature-branch"
+
+# ------------------------------------------------------------------------------
+# Cloud Configuration
+# ------------------------------------------------------------------------------
+cloud:
+  provider: "aws"
+  config:
+    region: "us-east-1"
+    availability_zones:
+      - "us-east-1a"
+      - "us-east-1b"
+    credentials:
+      type: "ephemeral"
+      role_arn: "arn:aws:iam::123456789012:role/SandboxRole"
+
+# ------------------------------------------------------------------------------
+# Lifecycle Hooks
+# ------------------------------------------------------------------------------
+hooks:
+  preRun:
+    - "scripts/setup_env.sh"
+    - "scripts/migrate_db.sh"
+
+  postRun:
+    - "scripts/notify_team.sh"
+    - "scripts/cleanup_temp_files.sh"
+
+  preDestroy:
+    - "scripts/backup_data.sh"
+
+  postDestroy:
+    - "scripts/post_teardown_metrics.sh"
+
+# ------------------------------------------------------------------------------
+# Components (core building blocks)
+# ------------------------------------------------------------------------------
+components:
+  # --------------------------------------------------------------------
+  # Terraform directory deployment
+  # --------------------------------------------------------------------
+  - name: "infra-stack"
+    type: "terraform"
+    target: "aws"
+    source:
+      mode: "directory"
+      path: "infra/terraform/"
+    strategy: "apply"
+    outputs:
+      - "vpc_id"
+      - "ec2_public_ip"
+
+  # --------------------------------------------------------------------
+  # Inline Terraform definition
+  # --------------------------------------------------------------------
+  - name: "inline-tf-bucket"
+    type: "terraform"
+    target: "aws"
+    source:
+      mode: "inline"
+      content: |
+        terraform {
+          required_providers {
+            aws = {
+              source  = "hashicorp/aws"
+              version = "~> 5.0"
+            }
+          }
+        }
+
+        resource "aws_s3_bucket" "sandbox" {
+          bucket_prefix = "envctl-inline-demo-"
+        }
+
+        output "bucket_name" {
+          value = aws_s3_bucket.sandbox.bucket
+        }
+    outputs:
+      - "bucket_name"
+
+  # --------------------------------------------------------------------
+  # Docker Compose application deployment
+  # --------------------------------------------------------------------
+  - name: "compose-services"
+    type: "docker_compose"
+    target: "local"
+    strategy: "daemonized"
+    source:
+      mode: "file"
+      path: "infra/docker/docker-compose.yml"
+    properties:
+      env_file: ".env.sandbox"
+      project_name: "sandbox_app"
+    outputs:
+      - "web_url"
+      - "db_host"
+
+  # --------------------------------------------------------------------
+  # CloudFormation stack
+  # --------------------------------------------------------------------
+  - name: "cf-stack"
+    type: "cloudformation"
+    target: "aws"
+    source:
+      mode: "file"
+      path: "infra/cloudformation/stack.yml"
+    strategy: "create-update"
+    properties:
+      parameters:
+        InstanceType: "${{ inputs.instance_type }}"
+    outputs:
+      - "PublicIP"
+      - "StackName"
+
+  # --------------------------------------------------------------------
+  # Helm application for Kubernetes
+  # --------------------------------------------------------------------
+  - name: "k8s-service"
+    type: "helm"
+    target: "kubernetes"
+    strategy: "install-upgrade"
+    properties:
+      chart: "charts/sandbox-app"
+      namespace: "sandbox"
+      values:
+        image:
+          tag: "${{ inputs.app_image }}"
+    outputs:
+      - "service_url"
+
+# ------------------------------------------------------------------------------
+# Final Outputs (aggregated at runtime)
+# ------------------------------------------------------------------------------
+outputs:
+  - "infra-stack.ec2_public_ip"
+  - "inline-tf-bucket.bucket_name"
+  - "compose-services.web_url"
+  - "k8s-service.service_url"
