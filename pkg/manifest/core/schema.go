@@ -1,11 +1,11 @@
 package manifestcore
 
 type Manifest struct {
-	Version    string           `yaml:"version"`
-	Inputs     map[string]Input `yaml:"inputs,omitempty"`
-	Metadata   Metadata         `yaml:"metadata"`
-	Cloud      CloudSpec        `yaml:"cloud,omitempty"`
-	Components []Component      `yaml:"components"`
+	Version    string                    `yaml:"version"`
+	Inputs     map[string]Input          `yaml:"inputs,omitempty"`
+	Metadata   Metadata                  `yaml:"metadata"`
+	Targets    map[string]TargetManifest `yaml:"targets,omitempty"`
+	Components []Component               `yaml:"components"`
 }
 
 type Input struct {
@@ -27,9 +27,9 @@ type Owner struct {
 	Email string `yaml:"email"`
 }
 
-type CloudSpec struct {
-	Provider string                 `yaml:"provider"`
-	Config   map[string]interface{} `yaml:"config"`
+type TargetManifest struct {
+	Type   string
+	Config map[string]interface{} `yaml:"config"`
 }
 
 type ComponentType string
@@ -48,16 +48,18 @@ type Hooks struct {
 type ComponentSource struct {
 	Content string `yaml:"content,omitempty"`
 	Path    string `yaml:"path,omitempty"`
-	Repo    string `yaml:"repo,omitempty"`
 }
 
 type Component struct {
-	Name       string            `yaml:"name"`
-	Type       string            `yaml:"type"`
-	DependsOn  []string          `yaml:"dependsOn,omitempty"`
-	Properties map[string]string `yaml:"properties,omitempty"`
-	Hooks      Hooks             `yaml:"hooks,omitempty"`
-	Source     ComponentSource   `yaml:"source,omitempty"`
-	Env        map[string]string `yaml:"env,omitempty"`
-	Outputs    []string          `yaml:"outputs,omitempty"`
+	Name      string            `yaml:"name"`
+	Type      string            `yaml:"type"`
+	DependsOn []string          `yaml:"dependsOn,omitempty"`
+	Config    map[string]string `yaml:"config,omitempty"`
+	Hooks     Hooks             `yaml:"hooks,omitempty"`
+	Source    ComponentSource   `yaml:"source,omitempty"`
+	Env       map[string]string `yaml:"env,omitempty"`
+	Outputs   []string          `yaml:"outputs,omitempty"`
+	Target    string            `yaml:"target,omitempty"`
+
+	LoadedConfig interface{} `yaml:"-"`
 }

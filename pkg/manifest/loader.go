@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+	"orch.io/pkg/logging"
 	manifestcore "orch.io/pkg/manifest/core"
 	manifestparsers "orch.io/pkg/manifest/parsers"
 )
@@ -13,7 +14,7 @@ type VersionedManifest struct {
 	Version string `yaml:"version"`
 }
 
-func Load(path string) (*manifestcore.Manifest, error) {
+func Load(path string, logger logging.Logger) (*manifestcore.Manifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest: %w", err)
@@ -38,7 +39,7 @@ func Load(path string) (*manifestcore.Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse manifest: %w", err)
 	}
-	fmt.Println("Successfully loaded manifest")
+	logger.Debug("Loaded manifest", logging.Field{Key: "path", Value: path}, logging.Field{Key: "version", Value: v.Version})
 
 	return m, nil
 }
