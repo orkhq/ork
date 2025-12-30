@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
-	"path"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -167,77 +165,6 @@ func (t *SSHTarget) CopyFile(ctx context.Context, req FileCopyRequest) (*FileCop
 		}
 	}(sftpClient)
 
-	var totalBytes int64
-	var totalFiles int
-	start := time.Now()
-
-	var walk func(from, to utils.FSWithPath) error
-	walk = func(from, to utils.FSWithPath) error {
-		fromPath := from.Path
-		toPath := to.Path
-		info, err := from.FS.Stat(fromPath)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			if !req.Recursive {
-				return fmt.Errorf("%s is a directory, recursive=false", fromPath)
-			}
-			entries, err := from.FS.ReadDir(fromPath)
-			if err != nil {
-				return err
-			}
-			for _, e := range entries {
-				eFrom := utils.FSWithPath{FS: from.FS, Path: path.Join(fromPath, e.Name())}
-				eTo := utils.FSWithPath{FS: to.FS, Path: path.Join(to.Path, e.Name())}
-				if err := walk(eFrom, eTo); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-
-		// Copy file
-		srcFile, err := from.FS.Open(fromPath)
-		if err != nil {
-			return err
-		}
-		defer func(srcFile utils.FileReader) {
-			err := srcFile.Close()
-			if err != nil {
-			}
-		}(srcFile)
-
-		if !req.Overwrite {
-			if _, err := to.FS.Stat(toPath); err == nil {
-				return fmt.Errorf("file %s already exists", toPath)
-			}
-		}
-
-		if err := to.FS.MkdirAll(path.Dir(toPath)); err != nil {
-			return err
-		}
-		dstFile, err := to.FS.Create(toPath)
-		if err != nil {
-			return err
-		}
-		defer func(dstFile utils.FileWriter) {
-			err := dstFile.Close()
-			if err != nil {
-
-			}
-		}(dstFile)
-
-		n, err := io.Copy(dstFile, srcFile)
-		if err != nil {
-			return err
-		}
-		totalBytes += n
-		totalFiles++
-		return nil
-	}
-
 	var srcFS, dstFS utils.FSWithPath
 	if req.ToTarget {
 		srcFS = utils.FSWithPath{FS: &utils.LocalFS{}, Path: req.Source}
@@ -247,12 +174,24 @@ func (t *SSHTarget) CopyFile(ctx context.Context, req FileCopyRequest) (*FileCop
 		dstFS = utils.FSWithPath{FS: &utils.LocalFS{}, Path: req.Destination}
 	}
 
-	err = walk(srcFS, dstFS)
+	copyRes, err := utils.FSCopy(srcFS, dstFS, utils.FSCopyOptions{
+		Recursive: req.Recursive,
+		Overwrite: req.Overwrite,
+	})
+
+	var totalBytes int64
+	var totalFiles int
+	var duration time.Duration
+	if err == nil {
+		totalBytes = copyRes.TotalBytes
+		totalFiles = copyRes.TotalFiles
+		duration = copyRes.Duration
+	}
 
 	return &FileCopyResult{
 		CopiedFiles: totalFiles,
 		Bytes:       totalBytes,
-		Duration:    time.Since(start),
+		Duration:    duration,
 		Error:       err,
 	}, err
 }

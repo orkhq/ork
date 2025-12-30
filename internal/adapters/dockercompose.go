@@ -20,6 +20,8 @@ type DockerComposeAdapter struct{}
 type DockerComposeConfig struct {
 	WorkingDir string   `mapstructure:"working_dir"`
 	Flags      []string `mapstructure:"flags"`
+	// Optional custom runner, e.g., "docker compose" or "docker-compose"
+	Runner string `mapstructure:"runner"`
 
 	Services []ComposeServiceMetaData
 }
@@ -102,9 +104,20 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		Duration:  copyRes.Duration,
 	})
 
+	runner := []string{"docker", "compose"}
+	if cfg.Runner != "" {
+		runner = strings.Split(cfg.Runner, " ")
+	}
+
+	if len(cfg.Flags) > 0 {
+		runner = append(runner, cfg.Flags...)
+	}
+
+	cmd := append(runner, "-f", composeFilePath, "-p", aCtx.envID, "up", "-d")
+
 	execRes, err := t.Exec(ctx, targets.ExecCommand{
 		WorkingDir: workingDir,
-		Command:    []string{"docker-compose", "-f", composeFilePath, "up", "-d"},
+		Command:    cmd,
 		Env:        buildOrchManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workingDir)),
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, fmt.Sprintf("-→] \033[34m[%s > %s]\033[0m ", c.Target, c.Name)),
@@ -194,10 +207,8 @@ func loadComposeFileAndExtractServices(filePath string) ([]ComposeServiceMetaDat
 		}
 
 		s.Ports = ports
-
 		services = append(services, s)
 	}
 
 	return services, nil
-
 }

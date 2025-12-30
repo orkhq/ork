@@ -127,6 +127,17 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 		componentResolver.RegisterComponentOutput(c.Name, "test", "value") //todo: fix
 	}
 
+	// Disconnect all targets
+	for _, t := range allTargets {
+		if err := t.Disconnect(); err != nil {
+			emitter.Emit(events.Event{
+				Type:    events.EventWarning,
+				Message: fmt.Sprintf("failed to disconnect from target \"%s\": %v", t.Name(), err),
+				Target:  t.Name(),
+			})
+		}
+	}
+
 	fmt.Printf("Sandbox created successfully\n")
 	return nil
 }
