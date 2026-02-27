@@ -50,9 +50,10 @@ func (s ComponentSourceSupport) SatisfiedBy(c manifestcore.ComponentSource) bool
 }
 
 type ComponentConfig interface{}
+type ComponentApplyOutput map[string]string
 
 type Adapter interface {
-	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) error
+	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) (ComponentApplyOutput, error)
 	Destroy(ctx context.Context, c *manifestcore.Component, r runners.Runner) error
 	RequiredCapabilities() runners.Capabilities
 	SupportedSources() ComponentSourceSupport

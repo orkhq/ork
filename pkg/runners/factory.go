@@ -7,24 +7,24 @@ import (
 	manifestcore "orch.io/pkg/manifest/core"
 )
 
-func FromManifest(name string, mec manifestcore.RunnerManifest) (Runner, error) {
-	env, _, err := RetrieveProviderConfigForExecutionContext(mec.Providers)
+func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {
+	env, _, err := RetrieveProviderConfigForExecutionContext(mr.Providers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve provider config for execution context \"%s\": %w", name, err)
 	}
-	switch mec.Type {
+	switch mr.Type {
 	case "local":
 		return &LocalRunner{name: name, env: env}, nil
 
 	case "ssh":
 		var cfg SSHRunnerConfig
-		if err := mapstructure.Decode(mec.Config, &cfg); err != nil {
+		if err := mapstructure.Decode(mr.Config, &cfg); err != nil {
 			return nil, fmt.Errorf("failed to decode ssh runner \"%s\" config: %w", name, err)
 		}
 		return &SSHRunner{name: name, config: cfg, env: env}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown runner type: %s", mec.Type)
+		return nil, fmt.Errorf("unknown runner type: %s", mr.Type)
 	}
 }
 

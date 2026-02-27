@@ -21,9 +21,14 @@ type job struct {
 
 func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	componentResolver := varresolvers.NewComponentResolver()
+	inputsResolver, err := varresolvers.NewInputsResolver(inputs, m.Inputs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve inputs: %w", err)
+	}
+
 	resolvers := &varresolvers.ChainResolver{
 		Resolvers: []varresolvers.Resolver{
-			varresolvers.NewInputsResolver(inputs), //todo: support inputs schema
+			inputsResolver,
 			varresolvers.NewEnvResolver(),
 			componentResolver,
 		},
@@ -141,7 +146,8 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 			Component: component.Name,
 		})
 
-		if err := adapter.Apply(ctx, component, runner); err != nil {
+		outputs, err := adapter.Apply(ctx, component, runner)
+		if err != nil {
 			emitter.Emit(events.Event{
 				Type:      events.EventFailure,
 				Message:   fmt.Sprintf("failed to apply component"),
@@ -153,8 +159,7 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 
 			return fmt.Errorf("component \"%s\" failed to apply", component.Name)
 		}
-
-		componentResolver.RegisterComponentOutput(component.Name, "test", "value") //todo: fix
+		componentResolver.RegisterComponentOutput(component.Name, component.Outputs, outputs)
 	}
 
 	// Disconnect all runners

@@ -70,15 +70,15 @@ func (d *DockerComposeAdapter) ValidateAndLoadConfig(ctx context.Context, c *man
 	return &cfg, warnings, nil
 }
 
-func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
+func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
 	cfg, ok := c.LoadedConfig.(*DockerComposeConfig)
 	if !ok {
-		return fmt.Errorf("invalid config type for DockerComposeAdapter")
+		return nil, fmt.Errorf("invalid config type for DockerComposeAdapter")
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to get env ID from context")
+		return nil, fmt.Errorf("failed to get env ID from context")
 	}
 
 	workDir := path.Join(cfg.WorkDir, "orch", aCtx.envID, c.Name)
@@ -94,10 +94,10 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		})
 
 		if err != nil {
-			return fmt.Errorf("failed to copy with-file %q to runner: %w", name, err)
+			return nil, fmt.Errorf("failed to copy with-file %q to runner: %w", name, err)
 		}
 		if copyRes.Error != nil {
-			return fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
+			return nil, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -123,10 +123,10 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		})
 
 		if err != nil {
-			return fmt.Errorf("failed to copy compose file %q to runner: %w", file, err)
+			return nil, fmt.Errorf("failed to copy compose file %q to runner: %w", file, err)
 		}
 		if copyRes.Error != nil {
-			return fmt.Errorf("error during compose file %q copy: %w", file, copyRes.Error)
+			return nil, fmt.Errorf("error during compose file %q copy: %w", file, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -164,14 +164,14 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	})
 
 	if err != nil {
-		return fmt.Errorf("an error occurred %w", err)
+		return nil, fmt.Errorf("an error occurred %w", err)
 	}
 
 	if execRes.Error != nil {
-		return fmt.Errorf("failed to run docker-compose up: %w", execRes.Error)
+		return nil, fmt.Errorf("failed to run docker-compose up: %w", execRes.Error)
 	}
 
-	return nil
+	return make(ComponentApplyOutput), nil
 }
 
 func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {

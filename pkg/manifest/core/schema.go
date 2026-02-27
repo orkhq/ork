@@ -15,6 +15,7 @@ type Input struct {
 	Type        string `yaml:"type"`
 	Default     string `yaml:"default,omitempty"`
 	Sensitive   bool   `yaml:"sensitive,omitempty"`
+	Required    bool   `yaml:"required,omitempty"`
 }
 
 type Metadata struct {

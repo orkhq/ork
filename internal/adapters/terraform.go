@@ -68,15 +68,15 @@ func (d *TerraformAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifes
 	return &cfg, warnings, nil
 }
 
-func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
+func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
 	cfg, ok := c.LoadedConfig.(*TerraformConfig)
 	if !ok {
-		return fmt.Errorf("invalid config type for TerraformAdapter")
+		return nil, fmt.Errorf("invalid config type for TerraformAdapter")
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to get env ID from context")
+		return nil, fmt.Errorf("failed to get env ID from context")
 	}
 
 	workDir := path.Join(cfg.WorkDir, "orch", aCtx.envID, c.Name, "module")
@@ -91,10 +91,10 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		})
 
 		if err != nil {
-			return fmt.Errorf("failed to copy terraform with-file %q to runner: %w", name, err)
+			return nil, fmt.Errorf("failed to copy terraform with-file %q to runner: %w", name, err)
 		}
 		if copyRes.Error != nil {
-			return fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
+			return nil, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -116,11 +116,11 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		Recursive:   true,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to copy terraform module to runner: %w", err)
+		return nil, fmt.Errorf("failed to copy terraform module to runner: %w", err)
 	}
 
 	if copyRes.Error != nil {
-		return fmt.Errorf("error during terraform module copy: %w", copyRes.Error)
+		return nil, fmt.Errorf("error during terraform module copy: %w", copyRes.Error)
 	}
 
 	aCtx.emitter.Emit(events.Event{
@@ -136,16 +136,16 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 	aCtx.logger.Debug("found terraform executable", logging.Field{Key: "path", Value: execPath})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tf, err := tfexec.NewTerraform(cfg.ModulePath, execPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := tf.Init(ctx, tfexec.Upgrade(true)); err != nil {
-		return err
+		return nil, err
 	}
 
 	aCtx.logger.Debug("terraform initialized", logging.Field{Key: "module", Value: cfg.ModulePath})
@@ -156,7 +156,7 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 
 	aCtx.logger.Debug("running Terraform plan")
 	if _, err := tf.Plan(ctx, tfPlanVars...); err != nil {
-		return err
+		return nil, err
 	}
 
 	var tfApplyVars []tfexec.ApplyOption
@@ -166,12 +166,12 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 
 	aCtx.logger.Debug("applying Terraform changes")
 	if err := tf.Apply(ctx, tfApplyVars...); err != nil {
-		return err
+		return nil, err
 	}
 
 	_, _ = tf.Output(ctx)
 
-	return nil
+	return make(ComponentApplyOutput), nil
 }
 
 func (d *TerraformAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {

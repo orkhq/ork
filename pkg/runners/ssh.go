@@ -132,6 +132,12 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 	}
 
 	start := time.Now()
+	if req.Stdout != nil {
+		_, err = req.Stdout.Write([]byte(cmd + "\n"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to write command to stdout: %w", err)
+		}
+	}
 	err = session.Run(cmd)
 	duration := time.Since(start)
 

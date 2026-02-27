@@ -25,10 +25,10 @@ func (d *CloudFormationAdapter) ValidateAndLoadConfig(ctx context.Context, c *ma
 	return nil, make([]events.Event, 0), nil
 }
 
-func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
+func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
 
 	// Implement CloudFormation stack creation logic here
-	return nil
+	return make(ComponentApplyOutput), nil
 }
 
 func (d *CloudFormationAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {

@@ -3,6 +3,7 @@ package varresolvers
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -30,16 +31,28 @@ func (r *ComponentResolver) Resolve(ctx context.Context, expr string) (string, e
 	defer r.mutex.RUnlock()
 
 	if comp, ok := r.outputs[expr]; ok {
-		return comp, fmt.Errorf("output %q not yet available for component %q", outputName, compName)
+		return comp, nil
 	}
+
+	for key := range r.outputs {
+		if strings.HasPrefix(key, compName+".outputs.") {
+			return "", fmt.Errorf("output %q not found for component %q", outputName, compName)
+		}
+	}
+
 	return "", fmt.Errorf("component %q not yet executed", compName)
 }
 
 // RegisterComponentOutput Called by adapters after a component finishes
-func (r *ComponentResolver) RegisterComponentOutput(componentName, outputName, value string) {
+func (r *ComponentResolver) RegisterComponentOutput(componentName string, keys []string, outputs map[string]string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	key := componentName + ".outputs." + outputName
-	r.outputs[key] = value
+	for outputName, value := range outputs {
+		if !slices.Contains(keys, outputName) {
+			continue // skip outputs not defined in the manifest
+		}
+		key := componentName + ".outputs." + outputName
+		r.outputs[key] = value
+	}
 }
