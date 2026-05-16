@@ -78,15 +78,15 @@ func (d *DockerComposeAdapter) ValidateAndLoadConfig(ctx context.Context, c *man
 	return &cfg, warnings, nil
 }
 
-func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
+func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyResult, error) {
 	cfg, ok := c.LoadedConfig.(*DockerComposeConfig)
 	if !ok {
-		return nil, fmt.Errorf("invalid config type for DockerComposeAdapter")
+		return ComponentApplyResult{}, fmt.Errorf("invalid config type for DockerComposeAdapter")
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to get env ID from context")
+		return ComponentApplyResult{}, fmt.Errorf("failed to get env ID from context")
 	}
 
 	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
@@ -102,10 +102,10 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to copy with-file %q to runner: %w", name, err)
+			return ComponentApplyResult{}, fmt.Errorf("failed to copy with-file %q to runner: %w", name, err)
 		}
 		if copyRes.Error != nil {
-			return nil, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
+			return ComponentApplyResult{}, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -131,10 +131,10 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to copy compose file %q to runner: %w", file, err)
+			return ComponentApplyResult{}, fmt.Errorf("failed to copy compose file %q to runner: %w", file, err)
 		}
 		if copyRes.Error != nil {
-			return nil, fmt.Errorf("error during compose file %q copy: %w", file, copyRes.Error)
+			return ComponentApplyResult{}, fmt.Errorf("error during compose file %q copy: %w", file, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -172,14 +172,29 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("an error occurred %w", err)
+		return ComponentApplyResult{}, fmt.Errorf("an error occurred %w", err)
 	}
 
 	if execRes.Error != nil {
-		return nil, fmt.Errorf("failed to run docker-compose up: %w", execRes.Error)
+		return ComponentApplyResult{}, fmt.Errorf("failed to run docker-compose up: %w", execRes.Error)
 	}
 
-	return make(ComponentApplyOutput), nil
+	composeState := DockerComposeState{
+		Command:      d.composeCommand(cfg),
+		ComposeFiles: composeFiles,
+		Env:          buildOrchManagedComposeEnv(nil, aCtx.envID, path.Dir(workDir), c.Name),
+		ProjectName:  composeProjectName(aCtx.envID, c.Name),
+		WorkDir:      workDir,
+	}
+	stateData, err := state.NewComponentStateData(workDir, composeState)
+	if err != nil {
+		return ComponentApplyResult{}, err
+	}
+
+	return ComponentApplyResult{
+		Outputs: make(ComponentApplyOutput),
+		State:   stateData,
+	}, nil
 }
 
 func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
@@ -202,15 +217,7 @@ func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Comp
 	}
 
 	// Build docker compose down command
-	execCommand := []string{"docker", "compose"}
-	if cfg.Command != "" {
-		execCommand = strings.Split(cfg.Command, " ")
-	}
-
-	if len(cfg.Flags) > 0 {
-		execCommand = append(execCommand, cfg.Flags...)
-	}
-
+	execCommand := d.composeCommand(cfg)
 	for _, cfp := range composeFiles {
 		execCommand = append(execCommand, "-f", cfp)
 	}
@@ -236,34 +243,6 @@ func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Comp
 	}
 
 	return nil
-}
-
-func (d *DockerComposeAdapter) BuildState(ctx context.Context, c *manifestcore.Component, t runners.Runner, outputs ComponentApplyOutput) (state.ComponentStateData, error) {
-	cfg, ok := c.LoadedConfig.(*DockerComposeConfig)
-	if !ok {
-		return state.ComponentStateData{}, fmt.Errorf("invalid config type for DockerComposeAdapter")
-	}
-
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return state.ComponentStateData{}, fmt.Errorf("failed to get adapter context")
-	}
-
-	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
-	composeFiles := make([]string, 0, len(c.Source.Files))
-	for _, file := range c.Source.Files {
-		composeFiles = append(composeFiles, path.Base(file))
-	}
-
-	composeState := DockerComposeState{
-		Command:      d.composeCommand(cfg),
-		ComposeFiles: composeFiles,
-		Env:          buildOrchManagedComposeEnv(nil, aCtx.envID, path.Dir(workDir), c.Name),
-		ProjectName:  composeProjectName(aCtx.envID, c.Name),
-		WorkDir:      workDir,
-	}
-
-	return state.NewComponentStateData(workDir, composeState)
 }
 
 func (d *DockerComposeAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {

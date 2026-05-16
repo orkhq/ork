@@ -97,3 +97,48 @@ orch/
 ├── go.mod
 ├── go.sum
 └── README.md
+
+## State persistence decisions
+
+Orch owns one environment state document per environment ID. The default local backend stores it at:
+
+```text
+.orch/<env-id>/state.json
+```
+
+State storage is pluggable through `pkg/state.Backend`. The interface stays in `pkg/state` because it depends on core state types such as `OrchState` and `Artifact`. Backend implementations live under `pkg/state/backends` with package name `statebackends`. This avoids a Go import cycle: backend implementations can import `pkg/state`, while `pkg/state` does not import its implementations.
+
+Current wiring uses the local backend explicitly:
+
+```go
+state.NewManager(envID, statebackends.NewLocal(".orch"))
+```
+
+Adapters return `ComponentStateData` after apply. This contains the component workdir, adapter payload, and any tool-state artifacts that must be preserved for teardown. The rule for artifacts is intentionally narrow:
+
+- artifact paths are relative to the component workdir
+- artifact paths are captured from and restored to the same path
+- absolute paths and `../` escapes are rejected
+- artifacts are files, not directories
+- local backend writes artifact files with owner-only permissions (`0600`)
+
+Terraform is the first adapter that needs tool-state artifacts. Docker Compose state lives in the Docker daemon under the Compose project, and CloudFormation state lives in AWS. Terraform with the default local backend needs `terraform.tfstate` to destroy resources from a stateless runner, so the Terraform adapter declares:
+
+```text
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+```
+
+During `up`, Orch saves the Orch state document and then captures declared artifacts from the runner into the configured state backend. During `down`, Orch restores artifacts to the runner before calling the adapter destroy path.
+
+Artifact capture currently uses temporary files as a bridge. The runner API copies files to and from filesystem paths, and the backend API also saves/restores from filesystem paths. We cannot assume direct runner-to-backend streaming, especially for future remote/object-store backends, so the flow is:
+
+```text
+capture: runner path -> temp local file -> state backend
+restore: state backend -> temp local file -> runner path
+```
+
+The temp files are created in the OS temp directory using Go's `os.CreateTemp`; the `*` in the pattern is only Go's random suffix placeholder. They are removed after each artifact operation.
+
+Terraform destroy also rehydrates the Terraform module source before running `terraform init` and `terraform destroy`. Source staging excludes `.terraform/`, `terraform.tfstate`, and `terraform.tfstate.backup` so a stale source-local state file cannot overwrite the restored artifact state.

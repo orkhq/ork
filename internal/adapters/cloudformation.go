@@ -70,29 +70,43 @@ func (d *CloudFormationAdapter) ValidateAndLoadConfig(ctx context.Context, c *ma
 	return &cfg, nil, nil
 }
 
-func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
+func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyResult, error) {
 	cfg, ok := c.LoadedConfig.(*CloudFormationConfig)
 	if !ok {
-		return nil, fmt.Errorf("invalid config type for CloudFormationAdapter")
+		return ComponentApplyResult{}, fmt.Errorf("invalid config type for CloudFormationAdapter")
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to get adapter context")
+		return ComponentApplyResult{}, fmt.Errorf("failed to get adapter context")
 	}
 
 	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
 	templateFile := path.Base(cfg.TemplatePath)
 	if err := d.copyTemplate(ctx, c, t, cfg.TemplatePath, path.Join(workDir, templateFile)); err != nil {
-		return nil, err
+		return ComponentApplyResult{}, err
 	}
 
 	cmd := d.deployCommand(cfg, templateFile)
 	if err := d.execAWS(ctx, t, workDir, cmd, c.Runner, c.Name, "deploy"); err != nil {
-		return nil, err
+		return ComponentApplyResult{}, err
 	}
 
-	return make(ComponentApplyOutput), nil
+	cfState := CloudFormationState{
+		Region:       cfg.Region,
+		StackName:    cfg.StackName,
+		TemplateFile: templateFile,
+		WorkDir:      workDir,
+	}
+	stateData, err := state.NewComponentStateData(workDir, cfState)
+	if err != nil {
+		return ComponentApplyResult{}, err
+	}
+
+	return ComponentApplyResult{
+		Outputs: make(ComponentApplyOutput),
+		State:   stateData,
+	}, nil
 }
 
 func (d *CloudFormationAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
@@ -111,28 +125,6 @@ func (d *CloudFormationAdapter) Destroy(ctx context.Context, c *manifestcore.Com
 		StackName: cfg.StackName,
 		WorkDir:   aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name),
 	}, c.Runner, c.Name, t)
-}
-
-func (d *CloudFormationAdapter) BuildState(ctx context.Context, c *manifestcore.Component, t runners.Runner, outputs ComponentApplyOutput) (state.ComponentStateData, error) {
-	cfg, ok := c.LoadedConfig.(*CloudFormationConfig)
-	if !ok {
-		return state.ComponentStateData{}, fmt.Errorf("invalid config type for CloudFormationAdapter")
-	}
-
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return state.ComponentStateData{}, fmt.Errorf("failed to get adapter context")
-	}
-
-	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
-	cfState := CloudFormationState{
-		Region:       cfg.Region,
-		StackName:    cfg.StackName,
-		TemplateFile: path.Base(cfg.TemplatePath),
-		WorkDir:      workDir,
-	}
-
-	return state.NewComponentStateData(workDir, cfState)
 }
 
 func (d *CloudFormationAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {

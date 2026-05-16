@@ -3,10 +3,15 @@ package adapters
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
 	"orch.io/pkg/logging"
 
@@ -25,6 +30,8 @@ type TerraformConfig struct {
 	// ModulePath is the path to the Terraform module to be applied.
 	ModulePath     string
 	FoundVariables map[string]*tfconfig.Variable
+	HasBackend     bool
+	BackendType    string
 }
 
 type TerraformState struct {
@@ -64,6 +71,24 @@ func (d *TerraformAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifes
 		cfg.Vars = make(map[string]string)
 	}
 	cfg.ModulePath = modulePath
+	hasBackend, backendType, err := detectTerraformBackend(modulePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to inspect terraform backend configuration: %w", err)
+	}
+	cfg.HasBackend = hasBackend
+	cfg.BackendType = backendType
+	if cfg.HasBackend {
+		adapterCtx.logger.Debug(
+			"detected terraform backend; skipping local terraform state artifact capture",
+			logging.Field{Key: "component", Value: c.Name},
+			logging.Field{Key: "backend", Value: cfg.BackendType},
+		)
+	} else {
+		adapterCtx.logger.Debug(
+			"no terraform backend detected; local terraform state artifacts will be captured",
+			logging.Field{Key: "component", Value: c.Name},
+		)
+	}
 
 	// Introspect variables defined in the module.
 	// These can be used for validation or prompting for missing variables in the future.
@@ -90,15 +115,15 @@ func (d *TerraformAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifes
 	return &cfg, warnings, nil
 }
 
-func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyOutput, error) {
+func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyResult, error) {
 	cfg, ok := c.LoadedConfig.(*TerraformConfig)
 	if !ok {
-		return nil, fmt.Errorf("invalid config type for TerraformAdapter")
+		return ComponentApplyResult{}, fmt.Errorf("invalid config type for TerraformAdapter")
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to get adapter context")
+		return ComponentApplyResult{}, fmt.Errorf("failed to get adapter context")
 	}
 
 	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
@@ -114,10 +139,10 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to copy terraform with-file %q to runner: %w", name, err)
+			return ComponentApplyResult{}, fmt.Errorf("failed to copy terraform with-file %q to runner: %w", name, err)
 		}
 		if copyRes.Error != nil {
-			return nil, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
+			return ComponentApplyResult{}, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
 		}
 
 		aCtx.emitter.Emit(events.Event{
@@ -130,46 +155,14 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		})
 	}
 
-	// Copy module files to runner
-	copyRes, err := t.CopyFile(ctx, runners.FileCopyRequest{
-		Source:      cfg.ModulePath,
-		Destination: workDir,
-		ToRunner:    true,
-		Overwrite:   true,
-		Recursive:   true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to copy terraform module to runner: %w", err)
+	if err := d.copyModuleToRunner(ctx, t, cfg.ModulePath, workDir, c.Type, c.Runner, c.Name); err != nil {
+		return ComponentApplyResult{}, err
 	}
-
-	if copyRes.Error != nil {
-		return nil, fmt.Errorf("error during terraform module copy: %w", copyRes.Error)
-	}
-
-	aCtx.emitter.Emit(events.Event{
-		Type:      events.EventInfo,
-		Message:   fmt.Sprintf("Copied terraform module to %q", workDir),
-		Adapter:   c.Type,
-		Runner:    c.Runner,
-		Component: c.Name,
-		Duration:  copyRes.Duration,
-	})
 
 	// Execute terraform init on runner
 	aCtx.logger.Debug("executing terraform init", logging.Field{Key: "workdir", Value: workDir})
-	initRes, err := t.Exec(ctx, runners.ExecCommand{
-		WorkingDir: workDir,
-		Command:    []string{"terraform", "init", "-upgrade"},
-		Env:        c.Env,
-		Timeout:    0,
-		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute terraform init: %w", err)
-	}
-	if initRes.Error != nil || initRes.ExitCode != 0 {
-		return nil, fmt.Errorf("terraform init failed with exit code %d: %v", initRes.ExitCode, initRes.Error)
+	if err := d.init(ctx, t, workDir, c.Env, c.Runner, c.Name); err != nil {
+		return ComponentApplyResult{}, err
 	}
 
 	// Build terraform apply command with variables
@@ -189,15 +182,24 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(c.Runner, c.Name)),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute terraform apply: %w", err)
+		return ComponentApplyResult{}, fmt.Errorf("failed to execute terraform apply: %w", err)
 	}
 	if applyRes.Error != nil || applyRes.ExitCode != 0 {
-		return nil, fmt.Errorf("terraform apply failed with exit code %d: %v", applyRes.ExitCode, applyRes.Error)
+		return ComponentApplyResult{}, fmt.Errorf("terraform apply failed with exit code %d: %v", applyRes.ExitCode, applyRes.Error)
 	}
 
 	// TODO: Extract outputs using terraform output -json
 	// For now, return empty outputs
-	return make(ComponentApplyOutput), nil
+	outputs := make(ComponentApplyOutput)
+	stateData, err := d.buildState(c, workDir)
+	if err != nil {
+		return ComponentApplyResult{}, err
+	}
+
+	return ComponentApplyResult{
+		Outputs: outputs,
+		State:   stateData,
+	}, nil
 }
 
 func (d *TerraformAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
@@ -239,18 +241,12 @@ func (d *TerraformAdapter) Destroy(ctx context.Context, c *manifestcore.Componen
 	return nil
 }
 
-func (d *TerraformAdapter) BuildState(ctx context.Context, c *manifestcore.Component, t runners.Runner, outputs ComponentApplyOutput) (state.ComponentStateData, error) {
+func (d *TerraformAdapter) buildState(c *manifestcore.Component, workDir string) (state.ComponentStateData, error) {
 	cfg, ok := c.LoadedConfig.(*TerraformConfig)
 	if !ok {
 		return state.ComponentStateData{}, fmt.Errorf("invalid config type for TerraformAdapter")
 	}
 
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return state.ComponentStateData{}, fmt.Errorf("failed to get adapter context")
-	}
-
-	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
 	vars := make(map[string]string, len(cfg.Vars))
 	for key, value := range cfg.Vars {
 		vars[key] = value
@@ -261,7 +257,29 @@ func (d *TerraformAdapter) BuildState(ctx context.Context, c *manifestcore.Compo
 		WorkDir: workDir,
 	}
 
-	return state.NewComponentStateData(workDir, terraformState)
+	if cfg.HasBackend {
+		return state.NewComponentStateData(workDir, terraformState)
+	}
+
+	return state.NewComponentStateData(
+		workDir,
+		terraformState,
+		state.Artifact{
+			Name:      "terraform-state",
+			Path:      "terraform.tfstate",
+			Required:  true,
+			Sensitive: true,
+		},
+		state.Artifact{
+			Name:      "terraform-state-backup",
+			Path:      "terraform.tfstate.backup",
+			Sensitive: true,
+		},
+		state.Artifact{
+			Name: ".terraform.lock.hcl",
+			Path: ".terraform.lock.hcl",
+		},
+	)
 }
 
 func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
@@ -271,6 +289,28 @@ func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState 
 	}
 	if s.WorkDir == "" {
 		return fmt.Errorf("terraform state for component %q has no workdir", componentState.Name)
+	}
+
+	aCtx, ok := AdapterContextFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("failed to get adapter context")
+	}
+
+	modulePath, err := loadAndGetTerraformModulePath(
+		componentState.Source,
+		aCtx.GetComponentWorkDirInOrchLocalWorkDir(componentState.Name),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to resolve terraform module path for destroy: %w", err)
+	}
+
+	if err := d.copyModuleToRunner(ctx, t, modulePath, s.WorkDir, componentState.Type, componentState.Runner.Name, componentState.Name); err != nil {
+		return err
+	}
+
+	aCtx.logger.Debug("executing terraform init", logging.Field{Key: "workdir", Value: s.WorkDir})
+	if err := d.init(ctx, t, s.WorkDir, nil, componentState.Runner.Name, componentState.Name); err != nil {
+		return err
 	}
 
 	destroyCmd := []string{"terraform", "destroy", "-auto-approve"}
@@ -290,6 +330,202 @@ func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState 
 	}
 	if destroyRes.Error != nil || destroyRes.ExitCode != 0 {
 		return fmt.Errorf("terraform destroy failed with exit code %d: %v", destroyRes.ExitCode, destroyRes.Error)
+	}
+
+	return nil
+}
+
+func (d *TerraformAdapter) copyModuleToRunner(ctx context.Context, t runners.Runner, modulePath string, workDir string, adapterName string, runnerName string, componentName string) error {
+	stagedModulePath, cleanup, err := stageTerraformSource(modulePath)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+
+	copyRes, err := t.CopyFile(ctx, runners.FileCopyRequest{
+		Source:      stagedModulePath,
+		Destination: workDir,
+		ToRunner:    true,
+		Overwrite:   true,
+		Recursive:   true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to copy terraform module to runner: %w", err)
+	}
+
+	if copyRes.Error != nil {
+		return fmt.Errorf("error during terraform module copy: %w", copyRes.Error)
+	}
+
+	if aCtx, ok := AdapterContextFromContext(ctx); ok {
+		aCtx.emitter.Emit(events.Event{
+			Type:      events.EventInfo,
+			Message:   fmt.Sprintf("Copied terraform module to %q", workDir),
+			Adapter:   adapterName,
+			Runner:    runnerName,
+			Component: componentName,
+			Duration:  copyRes.Duration,
+		})
+	}
+
+	return nil
+}
+
+func stageTerraformSource(modulePath string) (string, func(), error) {
+	// Destroy restores tool artifacts before copying source back to the runner.
+	// Stage a source-only module copy so stale local tfstate or .terraform data
+	// from the input module cannot overwrite the restored artifacts.
+	tmpDir, err := os.MkdirTemp("", "orch-terraform-module-*")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("failed to create temporary terraform module directory: %w", err)
+	}
+
+	cleanup := func() {
+		_ = os.RemoveAll(tmpDir)
+	}
+
+	if err := filepath.WalkDir(modulePath, func(currentPath string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		relPath, err := filepath.Rel(modulePath, currentPath)
+		if err != nil {
+			return err
+		}
+		if relPath == "." {
+			return nil
+		}
+
+		if shouldSkipTerraformSourcePath(entry, relPath) {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		destination := filepath.Join(tmpDir, relPath)
+		if entry.IsDir() {
+			return os.MkdirAll(destination, 0755)
+		}
+
+		return copyLocalFile(currentPath, destination)
+	}); err != nil {
+		cleanup()
+		return "", func() {}, fmt.Errorf("failed to stage terraform module: %w", err)
+	}
+
+	return tmpDir, cleanup, nil
+}
+
+func shouldSkipTerraformSourcePath(entry os.DirEntry, relPath string) bool {
+	if entry.IsDir() && entry.Name() == ".terraform" {
+		return true
+	}
+
+	switch filepath.ToSlash(relPath) {
+	case "terraform.tfstate", "terraform.tfstate.backup":
+		return true
+	default:
+		return false
+	}
+}
+
+func copyLocalFile(source, destination string) error {
+	if err := os.MkdirAll(filepath.Dir(destination), 0755); err != nil {
+		return err
+	}
+
+	src, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = src.Close()
+	}()
+
+	dst, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = dst.Close()
+	}()
+
+	_, err = io.Copy(dst, src)
+	return err
+}
+
+func detectTerraformBackend(modulePath string) (bool, string, error) {
+	entries, err := os.ReadDir(modulePath)
+	if err != nil {
+		return false, "", err
+	}
+
+	parser := hclparse.NewParser()
+	for _, entry := range entries {
+		if entry.IsDir() || !isTerraformConfigFile(entry.Name()) {
+			continue
+		}
+
+		filePath := filepath.Join(modulePath, entry.Name())
+		var parseDiags hcl.Diagnostics
+		var file *hcl.File
+		if strings.HasSuffix(entry.Name(), ".tf.json") {
+			file, parseDiags = parser.ParseJSONFile(filePath)
+		} else {
+			file, parseDiags = parser.ParseHCLFile(filePath)
+		}
+		if parseDiags.HasErrors() {
+			return false, "", fmt.Errorf("failed to parse %s: %s", filePath, parseDiags.Error())
+		}
+
+		content, _, contentDiags := file.Body.PartialContent(&hcl.BodySchema{
+			Blocks: []hcl.BlockHeaderSchema{{Type: "terraform"}},
+		})
+		if contentDiags.HasErrors() {
+			return false, "", fmt.Errorf("failed to inspect %s: %s", filePath, contentDiags.Error())
+		}
+
+		for _, terraformBlock := range content.Blocks {
+			backendContent, _, backendDiags := terraformBlock.Body.PartialContent(&hcl.BodySchema{
+				Blocks: []hcl.BlockHeaderSchema{
+					{Type: "backend", LabelNames: []string{"type"}},
+				},
+			})
+			if backendDiags.HasErrors() {
+				return false, "", fmt.Errorf("failed to inspect backend block in %s: %s", filePath, backendDiags.Error())
+			}
+			for _, backendBlock := range backendContent.Blocks {
+				if len(backendBlock.Labels) > 0 {
+					return true, backendBlock.Labels[0], nil
+				}
+				return true, "unknown", nil
+			}
+		}
+	}
+
+	return false, "", nil
+}
+
+func isTerraformConfigFile(name string) bool {
+	return strings.HasSuffix(name, ".tf") || strings.HasSuffix(name, ".tf.json")
+}
+
+func (d *TerraformAdapter) init(ctx context.Context, t runners.Runner, workDir string, env map[string]string, runnerName string, componentName string) error {
+	initRes, err := t.Exec(ctx, runners.ExecCommand{
+		WorkingDir: workDir,
+		Command:    []string{"terraform", "init", "-upgrade"},
+		Env:        env,
+		Timeout:    0,
+		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
+		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(runnerName, componentName)),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to execute terraform init: %w", err)
+	}
+	if initRes.Error != nil || initRes.ExitCode != 0 {
+		return fmt.Errorf("terraform init failed with exit code %d: %v", initRes.ExitCode, initRes.Error)
 	}
 
 	return nil

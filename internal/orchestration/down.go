@@ -10,12 +10,17 @@ import (
 	manifestcore "orch.io/pkg/manifest/core"
 	"orch.io/pkg/runners"
 	"orch.io/pkg/state"
+	statebackends "orch.io/pkg/state/backends"
 )
 
 func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) error {
 	fmt.Printf("Tearing down sandbox: %s\n", envID)
 
-	stateManager := state.NewStateManager(envID)
+	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, logger.AsDebugLogger())
+	if err != nil {
+		return fmt.Errorf("failed to configure state backend: %w", err)
+	}
+	stateManager := state.NewManager(envID, stateBackend)
 	currentState, err := stateManager.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load state: %w", err)
@@ -58,6 +63,10 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 		adapter, err := adapters.Get(componentState.Type)
 		if err != nil {
 			return err
+		}
+
+		if err := stateManager.RestoreArtifacts(ctx, componentState, t); err != nil {
+			return fmt.Errorf("component %s artifact restore failed: %w", componentState.Name, err)
 		}
 
 		if err := adapter.DestroyFromState(ctx, componentState, t); err != nil {

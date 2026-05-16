@@ -53,10 +53,14 @@ func (s ComponentSourceSupport) SatisfiedBy(c manifestcore.ComponentSource) bool
 type ComponentConfig interface{}
 type ComponentApplyOutput map[string]string
 
+type ComponentApplyResult struct {
+	Outputs ComponentApplyOutput
+	State   state.ComponentStateData
+}
+
 type Adapter interface {
-	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) (ComponentApplyOutput, error)
+	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) (ComponentApplyResult, error)
 	Destroy(ctx context.Context, c *manifestcore.Component, r runners.Runner) error
-	BuildState(ctx context.Context, c *manifestcore.Component, r runners.Runner, outputs ComponentApplyOutput) (state.ComponentStateData, error)
 	DestroyFromState(ctx context.Context, c state.ComponentState, r runners.Runner) error
 	RequiredCapabilities() runners.Capabilities
 	SupportedSources() ComponentSourceSupport

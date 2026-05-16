@@ -6,8 +6,14 @@ type Manifest struct {
 	Version    string                    `yaml:"version"`
 	Inputs     map[string]Input          `yaml:"inputs,omitempty"`
 	Metadata   Metadata                  `yaml:"metadata"`
+	State      *StateConfig              `yaml:"state,omitempty"`
 	Runners    map[string]RunnerManifest `yaml:"runners,omitempty"`
 	Components []Component               `yaml:"components"`
+}
+
+type StateConfig struct {
+	Backend string                 `yaml:"backend,omitempty"`
+	Config  map[string]interface{} `yaml:"config,omitempty"`
 }
 
 type Input struct {

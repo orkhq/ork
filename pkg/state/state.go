@@ -1,10 +1,9 @@
 package state
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -25,8 +24,16 @@ type RunnerRef struct {
 }
 
 type ComponentStateData struct {
-	WorkDir string                 `json:"workdir"`
-	Payload map[string]interface{} `json:"payload,omitempty"`
+	WorkDir   string                 `json:"workdir"`
+	Payload   map[string]interface{} `json:"payload,omitempty"`
+	Artifacts []Artifact             `json:"artifacts,omitempty"`
+}
+
+type Artifact struct {
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Required  bool   `json:"required,omitempty"`
+	Sensitive bool   `json:"sensitive,omitempty"`
 }
 
 // ComponentState represents the state of a single provisioned component
@@ -39,6 +46,7 @@ type ComponentState struct {
 	NonSensitiveConfig map[string]interface{}       `json:"non_sensitive_config,omitempty"`
 	Outputs            map[string]string            `json:"outputs,omitempty"`
 	Payload            map[string]interface{}       `json:"payload,omitempty"`
+	Artifacts          []Artifact                   `json:"artifacts,omitempty"`
 	Status             Status                       `json:"status"`
 	ProvisionedAt      string                       `json:"provisioned_at"`
 	UpdatedAt          string                       `json:"updated_at"`
@@ -55,18 +63,12 @@ type OrchState struct {
 
 // Manager handles persistence of orch state
 type Manager struct {
-	envID     string
-	stateFile string
+	envID   string
+	backend Backend
 }
 
-// NewStateManager creates a new state manager for the given environment ID
-func NewStateManager(envID string) *Manager {
-	stateDir := path.Join(".orch", envID)
-	stateFile := path.Join(stateDir, "state.json")
-	return &Manager{
-		envID:     envID,
-		stateFile: stateFile,
-	}
+func NewManager(envID string, backend Backend) *Manager {
+	return &Manager{envID: envID, backend: backend}
 }
 
 func New(envID, manifestID string) *OrchState {
@@ -81,7 +83,11 @@ func New(envID, manifestID string) *OrchState {
 }
 
 func (sm *Manager) LoadOrNew(manifestID string) (*OrchState, error) {
-	if !sm.Exists() {
+	exists, err := sm.Exists(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return New(sm.envID, manifestID), nil
 	}
 
@@ -95,20 +101,7 @@ func (sm *Manager) LoadOrNew(manifestID string) (*OrchState, error) {
 
 // Load reads the state file and returns the orch state
 func (sm *Manager) Load() (*OrchState, error) {
-	data, err := os.ReadFile(sm.stateFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("state file not found: %s (environment may not exist or was never created)", sm.stateFile)
-		}
-		return nil, fmt.Errorf("failed to read state file: %w", err)
-	}
-
-	var state OrchState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return nil, fmt.Errorf("failed to parse state file: %w", err)
-	}
-
-	return &state, nil
+	return sm.backend.Load(context.Background(), sm.envID)
 }
 
 func (s *OrchState) UpsertComponent(component ComponentState) {
@@ -147,35 +140,17 @@ func (s *OrchState) MarkComponentDestroyed(name string) {
 
 // Save writes the orch state to the state file
 func (sm *Manager) Save(state *OrchState) error {
-	stateDir := path.Dir(sm.stateFile)
-	if err := os.MkdirAll(stateDir, 0755); err != nil {
-		return fmt.Errorf("failed to create state directory: %w", err)
-	}
-
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal state: %w", err)
-	}
-
-	if err := os.WriteFile(sm.stateFile, data, 0644); err != nil {
-		return fmt.Errorf("failed to write state file: %w", err)
-	}
-
-	return nil
+	return sm.backend.Save(context.Background(), sm.envID, state)
 }
 
 // Exists checks if a state file exists for this environment
-func (sm *Manager) Exists() bool {
-	_, err := os.Stat(sm.stateFile)
-	return err == nil
+func (sm *Manager) Exists(ctx context.Context) (bool, error) {
+	return sm.backend.Exists(ctx, sm.envID)
 }
 
 // Delete removes the state file
 func (sm *Manager) Delete() error {
-	if err := os.Remove(sm.stateFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to delete state file: %w", err)
-	}
-	return nil
+	return sm.backend.Delete(context.Background(), sm.envID)
 }
 
 func NewComponentState(
@@ -196,19 +171,21 @@ func NewComponentState(
 		NonSensitiveConfig: SanitizeMap(component.Config),
 		Outputs:            outputs,
 		Payload:            data.Payload,
+		Artifacts:          data.Artifacts,
 		Status:             StatusApplied,
 	}
 }
 
-func NewComponentStateData(workDir string, payload interface{}) (ComponentStateData, error) {
+func NewComponentStateData(workDir string, payload interface{}, artifacts ...Artifact) (ComponentStateData, error) {
 	mapped, err := ToMap(payload)
 	if err != nil {
 		return ComponentStateData{}, err
 	}
 
 	return ComponentStateData{
-		WorkDir: workDir,
-		Payload: mapped,
+		WorkDir:   workDir,
+		Payload:   mapped,
+		Artifacts: artifacts,
 	}, nil
 }
 

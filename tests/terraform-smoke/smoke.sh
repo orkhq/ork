@@ -40,6 +40,9 @@ if ! terraform -chdir="$WORK_DIR" state list | grep -q '^terraform_data.smoke$';
   exit 1
 fi
 
+echo "Removing runner workdir to verify state artifact restore..."
+rm -rf "$WORK_DIR"
+
 echo "Tearing down $ENV_ID..."
 "$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_ID"
 

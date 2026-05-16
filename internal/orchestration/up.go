@@ -11,6 +11,7 @@ import (
 	manifestcore "orch.io/pkg/manifest/core"
 	"orch.io/pkg/runners"
 	"orch.io/pkg/state"
+	statebackends "orch.io/pkg/state/backends"
 	"orch.io/pkg/varresolvers"
 )
 
@@ -37,7 +38,11 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 
 	emitter := events.NewRendererEmitter()
 	ctx := adapters.NewAdapterContext(context.Background(), envID, logger.AsDebugLogger(), emitter)
-	stateManager := state.NewStateManager(envID)
+	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, logger.AsDebugLogger())
+	if err != nil {
+		return fmt.Errorf("failed to configure state backend: %w", err)
+	}
+	stateManager := state.NewManager(envID, stateBackend)
 	currentState, err := stateManager.LoadOrNew(m.Metadata.ID)
 	if err != nil {
 		return fmt.Errorf("failed to initialize state: %w", err)
@@ -152,7 +157,7 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 			Component: component.Name,
 		})
 
-		outputs, err := adapter.Apply(ctx, component, runner)
+		applyResult, err := adapter.Apply(ctx, component, runner)
 		if err != nil {
 			emitter.Emit(events.Event{
 				Type:      events.EventFailure,
@@ -165,15 +170,13 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 
 			return fmt.Errorf("component \"%s\" failed to apply", component.Name)
 		}
-		componentResolver.RegisterComponentOutput(component.Name, component.Outputs, outputs)
+		componentResolver.RegisterComponentOutput(component.Name, component.Outputs, applyResult.Outputs)
 
-		componentStateData, err := adapter.BuildState(ctx, component, runner, outputs)
-		if err != nil {
-			return fmt.Errorf("component %q failed to build state: %w", component.Name, err)
-		}
-
-		componentState := state.NewComponentState(component, string(runner.Type()), outputs, componentStateData)
+		componentState := state.NewComponentState(component, string(runner.Type()), applyResult.Outputs, applyResult.State)
 		currentState.UpsertComponent(componentState)
+		if err := stateManager.CaptureArtifacts(ctx, componentState, runner); err != nil {
+			return fmt.Errorf("failed to capture state artifacts for component %q: %w", component.Name, err)
+		}
 		if err := stateManager.Save(currentState); err != nil {
 			return fmt.Errorf("failed to save state for component %q: %w", component.Name, err)
 		}

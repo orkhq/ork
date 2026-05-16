@@ -98,12 +98,6 @@ func (s *SFTPFS) Open(path string) (FileReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(remoteFile *sftp.File) {
-		err := remoteFile.Close()
-		if err != nil {
-
-		}
-	}(remoteFile)
 
 	return remoteFile, nil
 }
