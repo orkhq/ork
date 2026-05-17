@@ -77,8 +77,8 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 				c.Name, c.Runner)
 		}
 
-		if _, err := c.Source.Validate(); err != nil {
-			return fmt.Errorf("component \"%s\" has an invalid source configuration", c.Name)
+		if err := validateOutputDeclarations(c); err != nil {
+			return err
 		}
 
 		if yes, list := t.UsesNonAmbientCredentials(); yes {
@@ -100,9 +100,8 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 			return err
 		}
 
-		if !adapter.SupportedSources().SatisfiedBy(c.Source) {
-			return fmt.Errorf("component \"%s\" source type \"%s\" is not supported by adapter \"%s\". Supported source types are: %s",
-				c.Name, c.Source.Type(), c.Type, adapter.SupportedSources().String())
+		if err := validateComponentSource(c, adapter); err != nil {
+			return err
 		}
 
 		if !adapter.RequiredCapabilities().SatisfiedBy(t.Capabilities()) {
@@ -184,9 +183,14 @@ func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs
 
 			return fmt.Errorf("component \"%s\" failed to apply", component.Name)
 		}
-		componentResolver.RegisterComponentOutput(component.Name, component.Outputs, applyResult.Outputs)
+		if err := validateApplyOutputs(component, applyResult.Outputs, emitter); err != nil {
+			return err
+		}
+		declaredOutputs := filterDeclaredOutputs(component, applyResult.Outputs)
+		stateOutputs := filterStateOutputs(component, declaredOutputs)
+		componentResolver.RegisterComponentOutput(component.Name, component.Outputs, declaredOutputs)
 
-		componentState := state.NewComponentState(component, string(runner.Type()), applyResult.Outputs, applyResult.State)
+		componentState := state.NewComponentState(component, string(runner.Type()), stateOutputs, applyResult.State)
 		currentState.UpsertComponent(componentState)
 		if err := stateManager.CaptureArtifacts(ctx, componentState, runner); err != nil {
 			return fmt.Errorf("failed to capture state artifacts for component %q: %w", component.Name, err)

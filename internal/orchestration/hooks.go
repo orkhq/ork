@@ -61,7 +61,7 @@ func runLifecycleHooks(ctx context.Context, t runners.Runner, hooks []manifestco
 
 		res, err := t.Exec(ctx, runners.ExecCommand{
 			WorkingDir: hookCtx.workDir,
-			Command:    []string{"sh", "-c", command},
+			Command:    utils.ShellCommand(hook.Shell, command),
 			Env:        env,
 			Timeout:    0,
 			Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(hookCtx.runner, hookCtx.component)),

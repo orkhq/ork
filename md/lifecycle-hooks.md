@@ -18,6 +18,7 @@ components:
         - command: ./scripts/prep.sh
       post_apply:
         - command: ./scripts/check.sh "${api.outputs.url}"
+          shell: ["bash", "-c"]
           env:
             DATABASE_URL: "${database.outputs.url}"
       pre_destroy:
@@ -29,9 +30,16 @@ components:
 Each hook item has:
 
 - `command`: required shell command
+- `shell`: optional command prefix, defaults to `["sh", "-c"]`
 - `env`: optional environment variables for that hook command
 
-Commands are executed through `sh -c`.
+The command is appended to the shell prefix. For example, `shell: ["bash", "-c"]` executes as `bash -c <command>`.
+
+Hooks run inline command strings, so the default includes `-c`:
+
+```text
+["sh", "-c"] + "echo hello" -> sh -c "echo hello"
+```
 
 ## Phases
 
@@ -74,6 +82,8 @@ ${ENV_VAR}
 Interpolation is strict. If a value cannot be resolved, the hook fails instead of replacing the expression with an empty string.
 
 Outputs are only available if they were declared in the producing component's `outputs` list and returned by the adapter.
+
+Because Orch interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside hook commands when you want the runner shell to expand them.
 
 ## Environment
 

@@ -41,4 +41,5 @@ bin/
 *.md
 !README.md
 !md/lifecycle-hooks.md
+!md/script-component.md
 !md/state-backends.md

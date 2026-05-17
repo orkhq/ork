@@ -81,8 +81,8 @@ components:
       path: "infra/terraform/"
     strategy: "apply"
     outputs:
-      - "vpc_id"
-      - "ec2_public_ip"
+      - name: "vpc_id"
+      - name: "ec2_public_ip"
 
   # --------------------------------------------------------------------
   # Inline Terraform definition
@@ -110,7 +110,7 @@ components:
           value = aws_s3_bucket.sandbox.bucket
         }
     outputs:
-      - "bucket_name"
+      - name: "bucket_name"
 
   # --------------------------------------------------------------------
   # Docker Compose application deployment
@@ -126,8 +126,8 @@ components:
       env_file: ".env.sandbox"
       project_name: "sandbox_app"
     outputs:
-      - "web_url"
-      - "db_host"
+      - name: "web_url"
+      - name: "db_host"
 
   # --------------------------------------------------------------------
   # CloudFormation stack
@@ -143,8 +143,8 @@ components:
       parameters:
         InstanceType: "${{ inputs.instance_type }}"
     outputs:
-      - "PublicIP"
-      - "StackName"
+      - name: "PublicIP"
+      - name: "StackName"
 
   # --------------------------------------------------------------------
   # Helm application for Kubernetes
@@ -160,7 +160,7 @@ components:
         image:
           tag: "${{ inputs.app_image }}"
     outputs:
-      - "service_url"
+      - name: "service_url"
 
 # ------------------------------------------------------------------------------
 # Final Outputs (aggregated at runtime)

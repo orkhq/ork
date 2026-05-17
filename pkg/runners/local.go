@@ -1,8 +1,10 @@
 package runners
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"time"
@@ -36,11 +38,17 @@ func (t *LocalRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, e
 	if req.Stdin != nil {
 		cmd.Stdin = req.Stdin
 	}
+	var stdout bytes.Buffer
 	if req.Stdout != nil {
-		cmd.Stdout = req.Stdout
+		cmd.Stdout = io.MultiWriter(req.Stdout, &stdout)
+	} else {
+		cmd.Stdout = &stdout
 	}
+	var stderr bytes.Buffer
 	if req.Stderr != nil {
-		cmd.Stderr = req.Stderr
+		cmd.Stderr = io.MultiWriter(req.Stderr, &stderr)
+	} else {
+		cmd.Stderr = &stderr
 	}
 
 	cmd.Env = append(os.Environ(), utils.MapToEnvSlice(t.env, req.Env)...)
@@ -62,6 +70,8 @@ func (t *LocalRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, e
 		ExitCode: exitCode,
 		Duration: duration,
 		Error:    err,
+		Stdout:   stdout.Bytes(),
+		Stderr:   stderr.Bytes(),
 	}, nil
 }
 

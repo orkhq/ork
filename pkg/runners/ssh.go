@@ -1,9 +1,11 @@
 package runners
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -119,11 +121,17 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 	if req.Stdin != nil {
 		session.Stdin = req.Stdin
 	}
+	var stdout bytes.Buffer
 	if req.Stdout != nil {
-		session.Stdout = req.Stdout
+		session.Stdout = io.MultiWriter(req.Stdout, &stdout)
+	} else {
+		session.Stdout = &stdout
 	}
+	var stderr bytes.Buffer
 	if req.Stderr != nil {
-		session.Stderr = req.Stderr
+		session.Stderr = io.MultiWriter(req.Stderr, &stderr)
+	} else {
+		session.Stderr = &stderr
 	}
 
 	// Combine command slice into single string safely
@@ -139,7 +147,7 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 			return nil, fmt.Errorf("failed to write command to stdout: %w", err)
 		}
 	}
-	
+
 	env := utils.MapToEnvSlice(t.env, req.Env)
 	for _, e := range env {
 		eParts := strings.Split(e, "=")
@@ -167,6 +175,8 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 		ExitCode: exitCode,
 		Duration: duration,
 		Error:    err,
+		Stdout:   stdout.Bytes(),
+		Stderr:   stderr.Bytes(),
 	}, nil
 }
 

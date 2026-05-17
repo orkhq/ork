@@ -1,0 +1,54 @@
+version: orch.io/1.0
+
+metadata:
+  id: script-smoke
+  description: Local script adapter smoke test
+  owner:
+    name: Orch
+    email: orch@example.com
+
+state:
+  backend: local
+  config:
+    path: .orch
+
+runners:
+  local:
+    type: local
+    config: {}
+
+components:
+  producer:
+    type: script
+    runner: local
+    workdir: ./tests/script-smoke/.workdir
+    source:
+      embedded: |
+        echo "token=abc" >> "$ORCH_OUTPUT_ENV"
+        cat > "$ORCH_OUTPUT_JSON" <<'JSON'
+        {
+          "url": "http://localhost:8080"
+        }
+        JSON
+    outputs:
+      - name: token
+      - name: url
+      - name: optional_value
+        required: false
+    config: {}
+
+  consumer:
+    type: script
+    runner: local
+    workdir: ./tests/script-smoke/.workdir
+    depends_on:
+      - producer
+    source:
+      embedded: |
+        test "$TOKEN_FROM_PRODUCER" = "abc"
+        echo "seen_token=$TOKEN_FROM_PRODUCER" >> "$ORCH_OUTPUT_ENV"
+    outputs:
+      - name: seen_token
+    config: {}
+    env:
+      TOKEN_FROM_PRODUCER: "${producer.outputs.token}"

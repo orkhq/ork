@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	manifestcore "orch.io/pkg/manifest/core"
 )
 
 type ComponentResolver struct {
@@ -46,12 +48,14 @@ func (r *ComponentResolver) Resolve(ctx context.Context, expr string) (string, e
 // RegisterComponentOutput stores freshly produced adapter outputs after apply.
 // Only outputs declared by the component manifest are made available for
 // interpolation.
-func (r *ComponentResolver) RegisterComponentOutput(componentName string, keys []string, outputs map[string]string) {
+func (r *ComponentResolver) RegisterComponentOutput(componentName string, declared []manifestcore.Output, outputs map[string]string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	for outputName, value := range outputs {
-		if !slices.Contains(keys, outputName) {
+		if !slices.ContainsFunc(declared, func(output manifestcore.Output) bool {
+			return output.Name == outputName
+		}) {
 			continue // skip outputs not defined in the manifest
 		}
 		key := componentName + ".outputs." + outputName

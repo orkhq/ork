@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -188,9 +189,10 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 		return ComponentApplyResult{}, fmt.Errorf("terraform apply failed with exit code %d: %v", applyRes.ExitCode, applyRes.Error)
 	}
 
-	// TODO: Extract outputs using terraform output -json
-	// For now, return empty outputs
-	outputs := make(ComponentApplyOutput)
+	outputs, err := d.outputs(ctx, t, workDir, c.Env, c.Runner, c.Name)
+	if err != nil {
+		return ComponentApplyResult{}, err
+	}
 	stateData, err := d.buildState(c, workDir)
 	if err != nil {
 		return ComponentApplyResult{}, err
@@ -333,6 +335,52 @@ func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState 
 	}
 
 	return nil
+}
+
+type terraformOutputValue struct {
+	Sensitive bool        `json:"sensitive"`
+	Value     interface{} `json:"value"`
+}
+
+func (d *TerraformAdapter) outputs(ctx context.Context, t runners.Runner, workDir string, env map[string]string, runnerName string, componentName string) (ComponentApplyOutput, error) {
+	outputRes, err := t.Exec(ctx, runners.ExecCommand{
+		WorkingDir: workDir,
+		Command:    []string{"terraform", "output", "-json"},
+		Env:        env,
+		Timeout:    0,
+		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute terraform output: %w", err)
+	}
+	if outputRes.Error != nil || outputRes.ExitCode != 0 {
+		return nil, fmt.Errorf("terraform output failed with exit code %d: %v", outputRes.ExitCode, outputRes.Error)
+	}
+
+	outputs, err := parseTerraformOutputs(outputRes.Stdout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse terraform output JSON: %w", err)
+	}
+	return outputs, nil
+}
+
+func parseTerraformOutputs(data []byte) (ComponentApplyOutput, error) {
+	var raw map[string]terraformOutputValue
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	outputs := make(ComponentApplyOutput, len(raw))
+	for key, output := range raw {
+		if output.Sensitive {
+			continue
+		}
+		value, err := stringifyOutputValue(output.Value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert terraform output %q: %w", key, err)
+		}
+		outputs[key] = value
+	}
+	return outputs, nil
 }
 
 func (d *TerraformAdapter) copyModuleToRunner(ctx context.Context, t runners.Runner, modulePath string, workDir string, adapterName string, runnerName string, componentName string) error {

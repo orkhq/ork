@@ -2,10 +2,12 @@ package adapters
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"sort"
+	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
 	"orch.io/pkg/events"
@@ -82,6 +84,33 @@ func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Compo
 	}
 
 	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
+	// Copy with-files to runner
+	for name, file := range c.WithFiles {
+		copyRes, err := t.CopyFile(ctx, runners.FileCopyRequest{
+			Source:      file,
+			Destination: path.Join(workDir, name),
+			ToRunner:    true,
+			Overwrite:   true,
+			Recursive:   false,
+		})
+
+		if err != nil {
+			return ComponentApplyResult{}, fmt.Errorf("failed to copy CloudFormation with-file %q to runner: %w", name, err)
+		}
+		if copyRes.Error != nil {
+			return ComponentApplyResult{}, fmt.Errorf("error during with-file %q copy: %w", name, copyRes.Error)
+		}
+
+		aCtx.emitter.Emit(events.Event{
+			Type:      events.EventInfo,
+			Message:   fmt.Sprintf("Copied with-file %q to %q", name, workDir),
+			Adapter:   c.Type,
+			Runner:    c.Runner,
+			Component: c.Name,
+			Duration:  copyRes.Duration,
+		})
+	}
+
 	templateFile := path.Base(cfg.TemplatePath)
 	if err := d.copyTemplate(ctx, c, t, cfg.TemplatePath, path.Join(workDir, templateFile)); err != nil {
 		return ComponentApplyResult{}, err
@@ -89,6 +118,11 @@ func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Compo
 
 	cmd := d.deployCommand(cfg, templateFile)
 	if err := d.execAWS(ctx, t, workDir, cmd, c.Runner, c.Name, "deploy"); err != nil {
+		return ComponentApplyResult{}, err
+	}
+
+	outputs, err := d.outputs(ctx, t, cfg, workDir, c.Runner, c.Name)
+	if err != nil {
 		return ComponentApplyResult{}, err
 	}
 
@@ -104,7 +138,7 @@ func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Compo
 	}
 
 	return ComponentApplyResult{
-		Outputs: make(ComponentApplyOutput),
+		Outputs: outputs,
 		State:   stateData,
 	}, nil
 }
@@ -160,7 +194,10 @@ func (d *CloudFormationAdapter) localTemplatePath(aCtx AdapterContext, c *manife
 		return "", fmt.Errorf("CloudFormation file source requires exactly one template file, got %d", len(c.Source.Files))
 	}
 
-	return c.Source.Files[0], nil
+	for _, file := range c.Source.Files {
+		return file, nil
+	}
+	return "", fmt.Errorf("CloudFormation file source requires exactly one template file")
 }
 
 func (d *CloudFormationAdapter) copyTemplate(ctx context.Context, c *manifestcore.Component, t runners.Runner, source, destination string) error {
@@ -259,6 +296,62 @@ func (d *CloudFormationAdapter) execAWS(ctx context.Context, t runners.Runner, w
 		return fmt.Errorf("CloudFormation %s failed with exit code %d: %v", action, execRes.ExitCode, execRes.Error)
 	}
 	return nil
+}
+
+type cloudFormationOutput struct {
+	Key   string `json:"OutputKey"`
+	Value string `json:"OutputValue"`
+}
+
+func (d *CloudFormationAdapter) outputs(ctx context.Context, t runners.Runner, cfg *CloudFormationConfig, workDir string, runnerName string, componentName string) (ComponentApplyOutput, error) {
+	cmd := []string{
+		"aws", "cloudformation", "describe-stacks",
+		"--stack-name", cfg.StackName,
+		"--query", "Stacks[0].Outputs",
+		"--output", "json",
+	}
+	if cfg.Region != "" {
+		cmd = append(cmd, "--region", cfg.Region)
+	}
+
+	outputRes, err := t.Exec(ctx, runners.ExecCommand{
+		WorkingDir: workDir,
+		Command:    cmd,
+		Timeout:    0,
+		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute CloudFormation describe-stacks: %w", err)
+	}
+	if outputRes.Error != nil || outputRes.ExitCode != 0 {
+		return nil, fmt.Errorf("CloudFormation describe-stacks failed with exit code %d: %v", outputRes.ExitCode, outputRes.Error)
+	}
+
+	trimmed := strings.TrimSpace(string(outputRes.Stdout))
+	if trimmed == "" || trimmed == "null" {
+		return make(ComponentApplyOutput), nil
+	}
+
+	outputs, err := parseCloudFormationOutputs(outputRes.Stdout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CloudFormation outputs JSON: %w", err)
+	}
+	return outputs, nil
+}
+
+func parseCloudFormationOutputs(data []byte) (ComponentApplyOutput, error) {
+	var raw []cloudFormationOutput
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	outputs := make(ComponentApplyOutput, len(raw))
+	for _, output := range raw {
+		if output.Key == "" {
+			continue
+		}
+		outputs[output.Key] = output.Value
+	}
+	return outputs, nil
 }
 
 func sortedKeys(values map[string]string) []string {

@@ -30,7 +30,9 @@ components:
       post_destroy:
         - command: "scripts/cleanup.sh"
 
-    outputs:                     # Names of expected outputs for interpolation or reporting
-      - "endpoint"
-      - "public_ip"
-      - "bucket_name"
+    outputs:                     # Expected outputs for interpolation or reporting
+      - name: "endpoint"
+      - name: "public_ip"
+        required: false
+      - name: "bucket_name"
+        sensitive: true

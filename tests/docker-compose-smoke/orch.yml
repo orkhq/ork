@@ -24,6 +24,6 @@ components:
     workdir: ./tests/docker-compose-smoke/.workdir
     source:
       files:
-        - ./tests/docker-compose-smoke/docker-compose.yml
+        docker-compose.yml: ./tests/docker-compose-smoke/docker-compose.yml
     config:
       command: docker compose

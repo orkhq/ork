@@ -48,6 +48,7 @@ type ComponentType string
 
 type Hook struct {
 	Command string            `yaml:"command"`
+	Shell   []string          `yaml:"shell,omitempty"`
 	Env     map[string]string `yaml:"env,omitempty"`
 }
 
@@ -75,8 +76,8 @@ type ComponentSource struct {
 	Embedded string `yaml:"embedded,omitempty"`
 	// Path specifies a directory path to load the component from.
 	Path string `yaml:"path,omitempty"`
-	// Files specifies a list of files to load for the component.
-	Files []string `yaml:"files,omitempty"`
+	// Files maps runner-side names to local files to load for the component.
+	Files map[string]string `yaml:"files,omitempty"`
 }
 
 func (c ComponentSource) Validate() (bool, error) {
@@ -119,6 +120,17 @@ func (c ComponentSource) Type() ComponentSourceType {
 	return ComponentSourceTypeNone
 }
 
+type Output struct {
+	Name      string `yaml:"name"`
+	Required  *bool  `yaml:"required,omitempty"`
+	Sensitive bool   `yaml:"sensitive,omitempty"`
+	Type      string `yaml:"type,omitempty"`
+}
+
+func (o Output) IsRequired() bool {
+	return o.Required == nil || *o.Required
+}
+
 type Component struct {
 	Name      string                 `yaml:"name"`
 	Type      string                 `yaml:"type"`
@@ -128,7 +140,7 @@ type Component struct {
 	Source    ComponentSource        `yaml:"source,omitempty"`
 	WithFiles map[string]string      `yaml:"with,omitempty"`
 	Env       map[string]string      `yaml:"env,omitempty"`
-	Outputs   []string               `yaml:"outputs,omitempty"`
+	Outputs   []Output               `yaml:"outputs,omitempty"`
 	Runner    string                 `yaml:"runner,omitempty"`
 	WorkDir   string                 `yaml:"workdir,omitempty"`
 

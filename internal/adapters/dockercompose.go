@@ -51,7 +51,7 @@ func (d *DockerComposeAdapter) ValidateAndLoadConfig(ctx context.Context, c *man
 	}
 
 	cfg.Services = make(map[string][]ComposeServiceMetaData)
-	for _, file := range c.Source.Files {
+	for name, file := range c.Source.Files {
 		services, err := loadComposeFileAndExtractServices(file)
 		if err != nil {
 			return nil, warnings, fmt.Errorf("failed to load compose file: %w", err)
@@ -73,7 +73,7 @@ func (d *DockerComposeAdapter) ValidateAndLoadConfig(ctx context.Context, c *man
 			}
 		}
 
-		cfg.Services[file] = services
+		cfg.Services[name] = services
 	}
 	return &cfg, warnings, nil
 }
@@ -120,11 +120,11 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 
 	// Copy compose files to workDir
 	composeFiles := make([]string, 0, len(c.Source.Files))
-	for _, file := range c.Source.Files {
-		composeFiles = append(composeFiles, path.Base(file))
+	for name, file := range c.Source.Files {
+		composeFiles = append(composeFiles, name)
 		copyRes, err := t.CopyFile(ctx, runners.FileCopyRequest{
 			Source:      file,
-			Destination: path.Join(workDir, path.Base(file)),
+			Destination: path.Join(workDir, name),
 			ToRunner:    true,
 			Overwrite:   true,
 			Recursive:   false,
@@ -212,8 +212,8 @@ func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Comp
 
 	// Build compose file paths on runner
 	composeFiles := make([]string, 0, len(c.Source.Files))
-	for _, file := range c.Source.Files {
-		composeFiles = append(composeFiles, path.Base(file))
+	for name := range c.Source.Files {
+		composeFiles = append(composeFiles, name)
 	}
 
 	// Build docker compose down command

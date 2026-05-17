@@ -28,7 +28,6 @@ func (s ComponentSourceSupport) String() string {
 	if s.Embedded {
 		supported = append(supported, "Embedded")
 	}
-
 	return "[" + strings.Join(supported, ", ") + "]"
 }
 

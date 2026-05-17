@@ -47,6 +47,7 @@ func TestRunLifecycleHooksInterpolatesCommandAndEnv(t *testing.T) {
 	err := runLifecycleHooks(context.Background(), runner, []manifestcore.Hook{
 		{
 			Command: `echo "${database.outputs.url}"`,
+			Shell:   []string{"bash", "-c"},
 			Env: map[string]string{
 				"DATABASE_URL": "${database.outputs.url}",
 			},
@@ -69,7 +70,7 @@ func TestRunLifecycleHooksInterpolatesCommandAndEnv(t *testing.T) {
 	}
 
 	hookCommand := runner.commands[1]
-	if got := hookCommand.Command; len(got) != 3 || got[0] != "sh" || got[1] != "-c" || got[2] != `echo "postgres://localhost:5432/app"` {
+	if got := hookCommand.Command; len(got) != 3 || got[0] != "bash" || got[1] != "-c" || got[2] != `echo "postgres://localhost:5432/app"` {
 		t.Fatalf("unexpected hook command: %#v", got)
 	}
 	if hookCommand.Env["DATABASE_URL"] != "postgres://localhost:5432/app" {

@@ -24,7 +24,7 @@ components:
     workdir: ./tests/cloudformation-smoke/.workdir
     source:
       files:
-        - ./tests/cloudformation-smoke/template.yml
+        template.yml: ./tests/cloudformation-smoke/template.yml
     config:
       tags:
         OrchSmoke: cloudformation
