@@ -23,14 +23,15 @@ const (
 )
 
 type hookExecutionContext struct {
-	envID        string
-	componentRef *manifestcore.Component
-	component    string
-	runner       string
-	workDir      string
-	baseEnv      map[string]string
-	resolver     varresolvers.Resolver
-	emitter      events.Emitter
+	envID           string
+	componentRef    *manifestcore.Component
+	component       string
+	runner          string
+	workDir         string
+	baseEnv         map[string]string
+	resolver        varresolvers.Resolver
+	commandResolver varresolvers.Resolver
+	emitter         events.Emitter
 }
 
 func runLifecycleHooks(ctx context.Context, t runners.Runner, hooks []manifestcore.Hook, phase lifecycleHookPhase, hookCtx hookExecutionContext) error {
@@ -53,7 +54,11 @@ func runLifecycleHooks(ctx context.Context, t runners.Runner, hooks []manifestco
 		}
 		emitHookEvent(hookCtx, events.EventStart, phase, i+1, "hook started", nil, 0)
 
-		command, err := varresolvers.InterpolateString(ctx, hook.Command, hookCtx.resolver)
+		commandResolver := hookCtx.commandResolver
+		if commandResolver == nil {
+			commandResolver = hookCtx.resolver
+		}
+		command, err := varresolvers.InterpolateString(ctx, hook.Command, commandResolver)
 		if err != nil {
 			emitHookEvent(hookCtx, events.EventFailure, phase, i+1, "hook interpolation failed", err, 0)
 			return fmt.Errorf("failed to interpolate %s hook %d for component %q: %w", phase, i+1, hookCtx.component, err)

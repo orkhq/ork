@@ -12,8 +12,11 @@ Guidelines:
 
 - pass secrets through environment variables instead of interpolating them directly into shell commands
 - prefer `$TOKEN` shell expansion over `${component.outputs.token}` inside command strings
+- hook command interpolation does not read OS environment variables; pass them through hook `env` instead
 - do not enable future command tracing in environments where commands may contain secrets
 - avoid printing tool state, provider output, or environment dumps in scripts and hooks
+
+For SSH runners, Orch sends environment exports and the command body through a stdin shell wrapper instead of placing them directly in the remote SSH command string. This keeps environment values out of the remote process arguments. The values still exist in the remote shell environment while the command runs, which is expected for environment-based secret passing.
 
 ## SSH Host Keys
 

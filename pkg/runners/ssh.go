@@ -179,7 +179,7 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 	}(session)
 
 	if req.Stdin != nil {
-		session.Stdin = req.Stdin
+		return nil, errors.New("ssh runner does not support ExecCommand.Stdin; stdin is reserved for the execution wrapper")
 	}
 	var stdout bytes.Buffer
 	if req.Stdout != nil {
@@ -194,7 +194,8 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 		session.Stderr = &stderr
 	}
 
-	cmd := buildSSHCommand(t.env, req)
+	cmd, script := buildSSHExecution(t.env, req)
+	session.Stdin = strings.NewReader(script)
 
 	start := time.Now()
 	err = session.Run(cmd)
@@ -218,12 +219,8 @@ func (t *SSHRunner) Exec(ctx context.Context, req ExecCommand) (*ExecResult, err
 	}, nil
 }
 
-func buildSSHCommand(baseEnv map[string]string, req ExecCommand) string {
-	parts := make([]string, 0, len(req.Command))
-	for _, arg := range req.Command {
-		parts = append(parts, shellQuote(arg))
-	}
-	command := strings.Join(parts, " ")
+func buildSSHExecution(baseEnv map[string]string, req ExecCommand) (string, string) {
+	lines := []string{"set -e"}
 
 	env := mergeEnv(baseEnv, req.Env)
 	if len(env) > 0 {
@@ -232,21 +229,22 @@ func buildSSHCommand(baseEnv map[string]string, req ExecCommand) string {
 			keys = append(keys, key)
 		}
 		sort.Strings(keys)
-
-		envParts := make([]string, 0, len(keys)+2)
-		envParts = append(envParts, "env")
 		for _, key := range keys {
-			envParts = append(envParts, shellQuote(key+"="+env[key]))
+			lines = append(lines, "export "+shellQuote(key+"="+env[key]))
 		}
-		envParts = append(envParts, command)
-		command = strings.Join(envParts, " ")
 	}
 
 	if req.WorkingDir != "" {
-		command = "cd " + shellQuote(req.WorkingDir) + " && " + command
+		lines = append(lines, "cd "+shellQuote(req.WorkingDir))
 	}
 
-	return command
+	parts := make([]string, 0, len(req.Command))
+	for _, arg := range req.Command {
+		parts = append(parts, shellQuote(arg))
+	}
+	lines = append(lines, "exec "+strings.Join(parts, " "))
+
+	return "sh -s", strings.Join(lines, "\n") + "\n"
 }
 
 func mergeEnv(envs ...map[string]string) map[string]string {

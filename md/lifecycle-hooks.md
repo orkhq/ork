@@ -71,19 +71,25 @@ Destroy hooks can reference persisted component outputs from state.
 
 ## Interpolation
 
-Hook commands and hook environment values support the same interpolation syntax as component config:
+Hook commands support Orch inputs and component outputs:
 
 ```text
 ${component.outputs.name}
 ${INPUT_NAME}
-${ENV_VAR}
 ```
 
 Interpolation is strict. If a value cannot be resolved, the hook fails instead of replacing the expression with an empty string.
 
 Outputs are only available if they were declared in the producing component's `outputs` list and returned by the adapter.
 
-Because Orch interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside hook commands when you want the runner shell to expand them.
+Hook commands do not use the OS environment resolver. This is intentional: interpolating `${TOKEN}` into a command turns that secret into literal command text. Use hook `env` to pass secrets, then reference them as normal shell variables such as `$TOKEN`.
+
+Hook `env` values can still interpolate OS environment variables:
+
+```yaml
+env:
+  TOKEN: "${TOKEN}"
+```
 
 ## Environment
 

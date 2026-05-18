@@ -50,6 +50,12 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 			componentResolver,
 		},
 	}
+	commandResolvers := &varresolvers.ChainResolver{
+		Resolvers: []varresolvers.Resolver{
+			inputsResolver,
+			componentResolver,
+		},
+	}
 
 	emitter := events.NewRendererEmitter()
 	debugLogger := logger.AsDebugLogger()
@@ -236,14 +242,15 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 		}
 
 		if err := runLifecycleHooks(ctx, runner, component.Hooks.PreApply, lifecyclePreApply, hookExecutionContext{
-			envID:        envID,
-			componentRef: component,
-			component:    component.Name,
-			runner:       runner.Name(),
-			workDir:      runnerWorkDir,
-			baseEnv:      component.Env,
-			resolver:     resolvers,
-			emitter:      emitter,
+			envID:           envID,
+			componentRef:    component,
+			component:       component.Name,
+			runner:          runner.Name(),
+			workDir:         runnerWorkDir,
+			baseEnv:         component.Env,
+			resolver:        resolvers,
+			commandResolver: commandResolvers,
+			emitter:         emitter,
 		}); err != nil {
 			currentState.MarkComponentFailed(component.Name, state.StagePreApply)
 			if saveErr := stateManager.Save(currentState); saveErr != nil {
@@ -341,14 +348,15 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 		}
 
 		if err := runLifecycleHooks(ctx, runner, component.Hooks.PostApply, lifecyclePostApply, hookExecutionContext{
-			envID:        envID,
-			componentRef: component,
-			component:    component.Name,
-			runner:       runner.Name(),
-			workDir:      applyResult.State.WorkDir,
-			baseEnv:      component.Env,
-			resolver:     resolvers,
-			emitter:      emitter,
+			envID:           envID,
+			componentRef:    component,
+			component:       component.Name,
+			runner:          runner.Name(),
+			workDir:         applyResult.State.WorkDir,
+			baseEnv:         component.Env,
+			resolver:        resolvers,
+			commandResolver: commandResolvers,
+			emitter:         emitter,
 		}); err != nil {
 			currentState.MarkComponentFailed(component.Name, state.StagePostApply)
 			if saveErr := stateManager.Save(currentState); saveErr != nil {

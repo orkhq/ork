@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"orch.io/pkg/events"
@@ -119,5 +120,65 @@ func TestRunLifecycleHooksFailsOnMissingInterpolation(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected missing interpolation to fail")
+	}
+}
+
+func TestRunLifecycleHooksDoesNotUseEnvResolverForCommands(t *testing.T) {
+	t.Setenv("ORCH_TEST_COMMAND_SECRET", "secret")
+
+	runner := &fakeHookRunner{}
+	err := runLifecycleHooks(context.Background(), runner, []manifestcore.Hook{
+		{Command: `echo "${ORCH_TEST_COMMAND_SECRET}"`},
+	}, lifecyclePreApply, hookExecutionContext{
+		envID:        "test-env",
+		componentRef: &manifestcore.Component{Name: "api", Type: "script"},
+		component:    "api",
+		runner:       "local",
+		resolver: &varresolvers.ChainResolver{
+			Resolvers: []varresolvers.Resolver{
+				varresolvers.NewEnvResolver(),
+			},
+		},
+		commandResolver: varresolvers.NewComponentResolver(),
+	})
+	if err == nil {
+		t.Fatal("expected command interpolation through env resolver to fail")
+	}
+	if !strings.Contains(err.Error(), "ORCH_TEST_COMMAND_SECRET") {
+		t.Fatalf("expected missing command interpolation error to mention env name, got %v", err)
+	}
+}
+
+func TestRunLifecycleHooksStillUsesEnvResolverForHookEnv(t *testing.T) {
+	t.Setenv("ORCH_TEST_HOOK_ENV", "from-os-env")
+
+	runner := &fakeHookRunner{}
+	err := runLifecycleHooks(context.Background(), runner, []manifestcore.Hook{
+		{
+			Command: "true",
+			Env: map[string]string{
+				"FROM_ENV": "${ORCH_TEST_HOOK_ENV}",
+			},
+		},
+	}, lifecyclePreApply, hookExecutionContext{
+		envID:        "test-env",
+		componentRef: &manifestcore.Component{Name: "api", Type: "script"},
+		component:    "api",
+		runner:       "local",
+		resolver: &varresolvers.ChainResolver{
+			Resolvers: []varresolvers.Resolver{
+				varresolvers.NewEnvResolver(),
+			},
+		},
+		commandResolver: varresolvers.NewComponentResolver(),
+	})
+	if err != nil {
+		t.Fatalf("runLifecycleHooks returned error: %v", err)
+	}
+	if len(runner.commands) != 1 {
+		t.Fatalf("expected one hook command, got %d", len(runner.commands))
+	}
+	if runner.commands[0].Env["FROM_ENV"] != "from-os-env" {
+		t.Fatalf("expected hook env to resolve from OS env, got %q", runner.commands[0].Env["FROM_ENV"])
 	}
 }

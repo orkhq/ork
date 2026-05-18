@@ -14,8 +14,8 @@ import (
 	manifestcore "orch.io/pkg/manifest/core"
 )
 
-func TestBuildSSHCommandIncludesWorkDirAndEnv(t *testing.T) {
-	got := buildSSHCommand(
+func TestBuildSSHExecutionHidesEnvAndCommandFromRemoteCommand(t *testing.T) {
+	command, script := buildSSHExecution(
 		map[string]string{"BASE": "from-base", "OVERRIDE": "base"},
 		ExecCommand{
 			WorkingDir: "/tmp/orch app",
@@ -27,9 +27,26 @@ func TestBuildSSHCommandIncludesWorkDirAndEnv(t *testing.T) {
 		},
 	)
 
-	want := "cd '/tmp/orch app' && env 'BASE=from-base' 'OVERRIDE=request' 'TOKEN=abc 123' 'sh' '-c' 'printf '\\''%s'\\'' \"$TOKEN\"'"
-	if got != want {
-		t.Fatalf("command mismatch\nwant: %s\n got: %s", want, got)
+	if command != "sh -s" {
+		t.Fatalf("command = %q, want sh -s", command)
+	}
+	for _, leaked := range []string{"TOKEN", "abc 123", "printf"} {
+		if strings.Contains(command, leaked) {
+			t.Fatalf("remote command leaked %q: %s", leaked, command)
+		}
+	}
+
+	for _, want := range []string{
+		"set -e",
+		"export 'BASE=from-base'",
+		"export 'OVERRIDE=request'",
+		"export 'TOKEN=abc 123'",
+		"cd '/tmp/orch app'",
+		"exec 'sh' '-c' 'printf '\\''%s'\\'' \"$TOKEN\"'",
+	} {
+		if !strings.Contains(script, want) {
+			t.Fatalf("script missing %q:\n%s", want, script)
+		}
 	}
 }
 

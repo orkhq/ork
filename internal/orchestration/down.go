@@ -45,6 +45,11 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 			componentResolver,
 		},
 	}
+	commandResolvers := &varresolvers.ChainResolver{
+		Resolvers: []varresolvers.Resolver{
+			componentResolver,
+		},
+	}
 
 	emitter := events.NewRendererEmitter()
 	debugLogger := logger.AsDebugLogger()
@@ -103,14 +108,15 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 				return fmt.Errorf("failed to save pre_destroy state for component %q: %w", componentState.Name, err)
 			}
 			if err := runLifecycleHooks(ctx, t, component.Hooks.PreDestroy, lifecyclePreDestroy, hookExecutionContext{
-				envID:        envID,
-				componentRef: component,
-				component:    componentState.Name,
-				runner:       t.Name(),
-				workDir:      componentState.WorkDir,
-				baseEnv:      component.Env,
-				resolver:     resolvers,
-				emitter:      emitter,
+				envID:           envID,
+				componentRef:    component,
+				component:       componentState.Name,
+				runner:          t.Name(),
+				workDir:         componentState.WorkDir,
+				baseEnv:         component.Env,
+				resolver:        resolvers,
+				commandResolver: commandResolvers,
+				emitter:         emitter,
 			}); err != nil {
 				currentState.MarkComponentFailed(componentState.Name, state.StagePreDestroy)
 				if saveErr := stateManager.Save(currentState); saveErr != nil {
@@ -153,14 +159,15 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 				return fmt.Errorf("failed to save post_destroy state for component %q: %w", componentState.Name, err)
 			}
 			if err := runLifecycleHooks(ctx, t, component.Hooks.PostDestroy, lifecyclePostDestroy, hookExecutionContext{
-				envID:        envID,
-				componentRef: component,
-				component:    componentState.Name,
-				runner:       t.Name(),
-				workDir:      componentState.WorkDir,
-				baseEnv:      component.Env,
-				resolver:     resolvers,
-				emitter:      emitter,
+				envID:           envID,
+				componentRef:    component,
+				component:       componentState.Name,
+				runner:          t.Name(),
+				workDir:         componentState.WorkDir,
+				baseEnv:         component.Env,
+				resolver:        resolvers,
+				commandResolver: commandResolvers,
+				emitter:         emitter,
 			}); err != nil {
 				currentState.MarkComponentFailed(componentState.Name, state.StagePostDestroy)
 				if saveErr := stateManager.Save(currentState); saveErr != nil {
