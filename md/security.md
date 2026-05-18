@@ -81,4 +81,6 @@ Reliable teardown assumes ambient authority on the runner.
 
 Today, `orch down` still needs the manifest to configure the state backend and runner topology. It should not rely on secret material embedded in the manifest. Runner ambient-auth checks enforce this boundary by blocking teardown when the runner requires non-ambient credentials.
 
+Provider auth follows the same direction. Terraform and CloudFormation warn when provider credentials are explicitly passed through component manifest values, such as AWS access-key environment variables or Terraform provider credential variables. These warnings name only the manifest keys, not the values.
+
 Future Orch Cloud should store enough runtime metadata to tear down from persisted state and runner identity without requiring the original manifest checkout.

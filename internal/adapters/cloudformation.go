@@ -50,13 +50,14 @@ func (d *CloudFormationAdapter) SupportedSources() ComponentSourceSupport {
 
 func (d *CloudFormationAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifestcore.Component) (ComponentConfig, []events.Event, error) {
 	var cfg CloudFormationConfig
+	var warnings []events.Event
 	if err := mapstructure.Decode(c.Config, &cfg); err != nil {
-		return nil, nil, err
+		return nil, warnings, err
 	}
 
 	aCtx, ok := AdapterContextFromContext(ctx)
 	if !ok {
-		return nil, nil, fmt.Errorf("failed to get adapter context")
+		return nil, warnings, fmt.Errorf("failed to get adapter context")
 	}
 
 	if cfg.StackName == "" {
@@ -65,11 +66,15 @@ func (d *CloudFormationAdapter) ValidateAndLoadConfig(ctx context.Context, c *ma
 
 	templatePath, err := d.localTemplatePath(aCtx, c)
 	if err != nil {
-		return nil, nil, err
+		return nil, warnings, err
 	}
 	cfg.TemplatePath = templatePath
 
-	return &cfg, nil, nil
+	if credentialRefs := detectExplicitProviderCredentialEnv(c.Env); len(credentialRefs) > 0 {
+		warnings = append(warnings, providerCredentialWarning(c, credentialRefs))
+	}
+
+	return &cfg, warnings, nil
 }
 
 func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Component, t runners.Runner) (ComponentApplyResult, error) {

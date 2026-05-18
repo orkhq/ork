@@ -113,6 +113,12 @@ func (d *TerraformAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifes
 		}
 	}
 
+	credentialRefs := detectExplicitProviderCredentialEnv(c.Env)
+	credentialRefs = append(credentialRefs, detectExplicitTerraformCredentialVars(cfg.Vars)...)
+	if len(credentialRefs) > 0 {
+		warnings = append(warnings, providerCredentialWarning(c, credentialRefs))
+	}
+
 	return &cfg, warnings, nil
 }
 
