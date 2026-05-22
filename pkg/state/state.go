@@ -64,6 +64,11 @@ type Artifact struct {
 	Sensitive bool   `json:"sensitive,omitempty"`
 }
 
+type DestroyHooks struct {
+	PreDestroy  []manifestcore.Hook `json:"pre_destroy,omitempty"`
+	PostDestroy []manifestcore.Hook `json:"post_destroy,omitempty"`
+}
+
 // ComponentState represents the state of a single provisioned component
 type ComponentState struct {
 	Name               string                       `json:"name"`
@@ -75,10 +80,12 @@ type ComponentState struct {
 	Outputs            map[string]string            `json:"outputs,omitempty"`
 	Payload            map[string]interface{}       `json:"payload,omitempty"`
 	Artifacts          []Artifact                   `json:"artifacts,omitempty"`
+	DestroyHooks       DestroyHooks                 `json:"destroy_hooks,omitempty"`
 	Status             Status                       `json:"status"`
 	Stage              Stage                        `json:"stage,omitempty"`
 	ProvisionedAt      string                       `json:"provisioned_at"`
 	UpdatedAt          string                       `json:"updated_at"`
+	Env                map[string]string            `json:"-"`
 }
 
 // OrchState represents the state of an entire orch environment
@@ -179,6 +186,7 @@ func (s *OrchState) BeginComponentApply(component *manifestcore.Component, runne
 			s.Components[i].Source = component.Source
 			s.Components[i].WorkDir = workDir
 			s.Components[i].NonSensitiveConfig = SanitizeMap(component.Config)
+			s.Components[i].DestroyHooks = destroyHooksFromComponent(component)
 			s.Components[i].Status = StatusApplying
 			s.Components[i].Stage = stage
 			s.Components[i].UpdatedAt = now
@@ -200,6 +208,7 @@ func (s *OrchState) BeginComponentApply(component *manifestcore.Component, runne
 		NonSensitiveConfig: SanitizeMap(component.Config),
 		Outputs:            make(map[string]string),
 		Payload:            make(map[string]interface{}),
+		DestroyHooks:       destroyHooksFromComponent(component),
 		Status:             StatusApplying,
 		Stage:              stage,
 		ProvisionedAt:      now,
@@ -285,8 +294,16 @@ func NewComponentState(
 		Outputs:            outputs,
 		Payload:            data.Payload,
 		Artifacts:          data.Artifacts,
+		DestroyHooks:       destroyHooksFromComponent(component),
 		Status:             StatusApplied,
 		Stage:              StagePostApply,
+	}
+}
+
+func destroyHooksFromComponent(component *manifestcore.Component) DestroyHooks {
+	return DestroyHooks{
+		PreDestroy:  append([]manifestcore.Hook(nil), component.Hooks.PreDestroy...),
+		PostDestroy: append([]manifestcore.Hook(nil), component.Hooks.PostDestroy...),
 	}
 }
 

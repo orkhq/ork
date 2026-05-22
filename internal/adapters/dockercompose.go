@@ -197,55 +197,7 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	}, nil
 }
 
-func (d *DockerComposeAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
-	cfg, ok := c.LoadedConfig.(*DockerComposeConfig)
-	if !ok {
-		return fmt.Errorf("invalid config type for DockerComposeAdapter")
-	}
-
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return fmt.Errorf("failed to get adapter context")
-	}
-
-	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
-
-	// Build compose file paths on runner
-	composeFiles := make([]string, 0, len(c.Source.Files))
-	for name := range c.Source.Files {
-		composeFiles = append(composeFiles, name)
-	}
-
-	// Build docker compose down command
-	execCommand := d.composeCommand(cfg)
-	for _, cfp := range composeFiles {
-		execCommand = append(execCommand, "-f", cfp)
-	}
-
-	cmd := append(execCommand, "-p", composeProjectName(aCtx.envID, c.Name), "down", "-v")
-
-	// Execute docker compose down on runner
-	execRes, err := t.Exec(ctx, runners.ExecCommand{
-		WorkingDir: workDir,
-		Command:    cmd,
-		Env:        buildOrchManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workDir), c.Name),
-		Timeout:    0,
-		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to execute docker compose down: %w", err)
-	}
-
-	if execRes.Error != nil || execRes.ExitCode != 0 {
-		return fmt.Errorf("docker compose down failed with exit code %d: %v", execRes.ExitCode, execRes.Error)
-	}
-
-	return nil
-}
-
-func (d *DockerComposeAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
+func (d *DockerComposeAdapter) Destroy(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
 	var s DockerComposeState
 	if err := mapstructure.Decode(componentState.Payload, &s); err != nil {
 		return fmt.Errorf("failed to decode docker-compose state: %w", err)
@@ -260,11 +212,19 @@ func (d *DockerComposeAdapter) DestroyFromState(ctx context.Context, componentSt
 		execCommand = append(execCommand, "-f", cfp)
 	}
 
+	env := make(map[string]string, len(componentState.Env)+len(s.Env))
+	for key, value := range componentState.Env {
+		env[key] = value
+	}
+	for key, value := range s.Env {
+		env[key] = value
+	}
+
 	cmd := append(execCommand, "-p", s.ProjectName, "down", "-v")
 	execRes, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: s.WorkDir,
 		Command:    cmd,
-		Env:        s.Env,
+		Env:        env,
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(componentState.Runner.Name, componentState.Name)),
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(componentState.Runner.Name, componentState.Name)),

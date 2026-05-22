@@ -9,6 +9,7 @@ import (
 	"orch.io/pkg/events"
 	manifestcore "orch.io/pkg/manifest/core"
 	"orch.io/pkg/runners"
+	"orch.io/pkg/state"
 	"orch.io/pkg/utils"
 	"orch.io/pkg/varresolvers"
 )
@@ -155,6 +156,13 @@ func lifecycleHookEnv(ctx context.Context, hookCtx hookExecutionContext, phase l
 
 func validateLifecycleHooksForRunner(componentName string, hooks manifestcore.Hooks, runner runners.Runner) error {
 	if hooks.HasAny() && !runner.Capabilities().Exec {
+		return fmt.Errorf("component %q defines lifecycle hooks, but runner %q does not support Exec", componentName, runner.Name())
+	}
+	return nil
+}
+
+func validateDestroyHooksForRunner(componentName string, hooks state.DestroyHooks, runner runners.Runner) error {
+	if (len(hooks.PreDestroy) > 0 || len(hooks.PostDestroy) > 0) && !runner.Capabilities().Exec {
 		return fmt.Errorf("component %q defines lifecycle hooks, but runner %q does not support Exec", componentName, runner.Name())
 	}
 	return nil

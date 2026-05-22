@@ -205,45 +205,6 @@ func (d *TerraformAdapter) Apply(ctx context.Context, c *manifestcore.Component,
 	}, nil
 }
 
-func (d *TerraformAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
-	cfg, ok := c.LoadedConfig.(*TerraformConfig)
-	if !ok {
-		return fmt.Errorf("invalid config type for TerraformAdapter")
-	}
-
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return fmt.Errorf("failed to get adapter context")
-	}
-
-	workDir := aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name)
-
-	// Build terraform destroy command with variables
-	destroyCmd := []string{"terraform", "destroy", "-auto-approve"}
-	for k, v := range cfg.Vars {
-		destroyCmd = append(destroyCmd, "-var", fmt.Sprintf("%s=%s", k, v))
-	}
-
-	// Execute terraform destroy on runner
-	aCtx.logger.Debug("executing terraform destroy", logging.Field{Key: "workdir", Value: workDir})
-	destroyRes, err := t.Exec(ctx, runners.ExecCommand{
-		WorkingDir: workDir,
-		Command:    destroyCmd,
-		Env:        c.Env,
-		Timeout:    0,
-		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(c.Runner, c.Name)),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to execute terraform destroy: %w", err)
-	}
-	if destroyRes.Error != nil || destroyRes.ExitCode != 0 {
-		return fmt.Errorf("terraform destroy failed with exit code %d: %v", destroyRes.ExitCode, destroyRes.Error)
-	}
-
-	return nil
-}
-
 func (d *TerraformAdapter) buildState(c *manifestcore.Component, workDir string) (state.ComponentStateData, error) {
 	cfg, ok := c.LoadedConfig.(*TerraformConfig)
 	if !ok {
@@ -285,7 +246,7 @@ func (d *TerraformAdapter) buildState(c *manifestcore.Component, workDir string)
 	)
 }
 
-func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
+func (d *TerraformAdapter) Destroy(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
 	var s TerraformState
 	if err := mapstructure.Decode(componentState.Payload, &s); err != nil {
 		return fmt.Errorf("failed to decode terraform state: %w", err)
@@ -312,7 +273,7 @@ func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState 
 	}
 
 	aCtx.logger.Debug("executing terraform init", logging.Field{Key: "workdir", Value: s.WorkDir})
-	if err := d.init(ctx, t, s.WorkDir, nil, componentState.Runner.Name, componentState.Name); err != nil {
+	if err := d.init(ctx, t, s.WorkDir, componentState.Env, componentState.Runner.Name, componentState.Name); err != nil {
 		return err
 	}
 
@@ -324,6 +285,7 @@ func (d *TerraformAdapter) DestroyFromState(ctx context.Context, componentState 
 	destroyRes, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: s.WorkDir,
 		Command:    destroyCmd,
+		Env:        componentState.Env,
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(componentState.Runner.Name, componentState.Name)),
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(componentState.Runner.Name, componentState.Name)),

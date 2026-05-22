@@ -118,11 +118,11 @@ func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Compo
 	}
 
 	cmd := d.deployCommand(cfg, templateFile)
-	if err := d.execAWS(ctx, t, workDir, cmd, c.Runner, c.Name, "deploy"); err != nil {
+	if err := d.execAWS(ctx, t, workDir, cmd, c.Env, c.Runner, c.Name, "deploy"); err != nil {
 		return ComponentApplyResult{}, err
 	}
 
-	outputs, err := d.outputs(ctx, t, cfg, workDir, c.Runner, c.Name)
+	outputs, err := d.outputs(ctx, t, cfg, workDir, c.Env, c.Runner, c.Name)
 	if err != nil {
 		return ComponentApplyResult{}, err
 	}
@@ -144,25 +144,7 @@ func (d *CloudFormationAdapter) Apply(ctx context.Context, c *manifestcore.Compo
 	}, nil
 }
 
-func (d *CloudFormationAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
-	cfg, ok := c.LoadedConfig.(*CloudFormationConfig)
-	if !ok {
-		return fmt.Errorf("invalid config type for CloudFormationAdapter")
-	}
-
-	aCtx, ok := AdapterContextFromContext(ctx)
-	if !ok {
-		return fmt.Errorf("failed to get adapter context")
-	}
-
-	return d.deleteStack(ctx, CloudFormationState{
-		Region:    cfg.Region,
-		StackName: cfg.StackName,
-		WorkDir:   aCtx.BuildRunnerWorkDir(c.WorkDir, c.Name),
-	}, c.Runner, c.Name, t)
-}
-
-func (d *CloudFormationAdapter) DestroyFromState(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
+func (d *CloudFormationAdapter) Destroy(ctx context.Context, componentState state.ComponentState, t runners.Runner) error {
 	var s CloudFormationState
 	if err := mapstructure.Decode(componentState.Payload, &s); err != nil {
 		return fmt.Errorf("failed to decode CloudFormation state: %w", err)
@@ -174,7 +156,7 @@ func (d *CloudFormationAdapter) DestroyFromState(ctx context.Context, componentS
 		return fmt.Errorf("CloudFormation state for component %q has no workdir", componentState.Name)
 	}
 
-	return d.deleteStack(ctx, s, componentState.Runner.Name, componentState.Name, t)
+	return d.deleteStack(ctx, s, componentState.Env, componentState.Runner.Name, componentState.Name, t)
 }
 
 func (d *CloudFormationAdapter) localTemplatePath(aCtx AdapterContext, c *manifestcore.Component) (string, error) {
@@ -264,7 +246,7 @@ func (d *CloudFormationAdapter) deployCommand(cfg *CloudFormationConfig, templat
 	return cmd
 }
 
-func (d *CloudFormationAdapter) deleteStack(ctx context.Context, s CloudFormationState, runnerName, componentName string, t runners.Runner) error {
+func (d *CloudFormationAdapter) deleteStack(ctx context.Context, s CloudFormationState, env map[string]string, runnerName, componentName string, t runners.Runner) error {
 	deleteCmd := []string{"aws", "cloudformation", "delete-stack", "--stack-name", s.StackName}
 	waitCmd := []string{"aws", "cloudformation", "wait", "stack-delete-complete", "--stack-name", s.StackName}
 	if s.Region != "" {
@@ -272,20 +254,21 @@ func (d *CloudFormationAdapter) deleteStack(ctx context.Context, s CloudFormatio
 		waitCmd = append(waitCmd, "--region", s.Region)
 	}
 
-	if err := d.execAWS(ctx, t, s.WorkDir, deleteCmd, runnerName, componentName, "delete-stack"); err != nil {
+	if err := d.execAWS(ctx, t, s.WorkDir, deleteCmd, env, runnerName, componentName, "delete-stack"); err != nil {
 		return err
 	}
-	if err := d.execAWS(ctx, t, s.WorkDir, waitCmd, runnerName, componentName, "wait stack-delete-complete"); err != nil {
+	if err := d.execAWS(ctx, t, s.WorkDir, waitCmd, env, runnerName, componentName, "wait stack-delete-complete"); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (d *CloudFormationAdapter) execAWS(ctx context.Context, t runners.Runner, workDir string, cmd []string, runnerName, componentName, action string) error {
+func (d *CloudFormationAdapter) execAWS(ctx context.Context, t runners.Runner, workDir string, cmd []string, env map[string]string, runnerName, componentName, action string) error {
 	execRes, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: workDir,
 		Command:    cmd,
+		Env:        env,
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(runnerName, componentName)),
@@ -304,7 +287,7 @@ type cloudFormationOutput struct {
 	Value string `json:"OutputValue"`
 }
 
-func (d *CloudFormationAdapter) outputs(ctx context.Context, t runners.Runner, cfg *CloudFormationConfig, workDir string, runnerName string, componentName string) (ComponentApplyOutput, error) {
+func (d *CloudFormationAdapter) outputs(ctx context.Context, t runners.Runner, cfg *CloudFormationConfig, workDir string, env map[string]string, runnerName string, componentName string) (ComponentApplyOutput, error) {
 	cmd := []string{
 		"aws", "cloudformation", "describe-stacks",
 		"--stack-name", cfg.StackName,
@@ -318,6 +301,7 @@ func (d *CloudFormationAdapter) outputs(ctx context.Context, t runners.Runner, c
 	outputRes, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: workDir,
 		Command:    cmd,
+		Env:        env,
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
 	})

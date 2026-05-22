@@ -14,8 +14,13 @@ import (
 	"orch.io/pkg/varresolvers"
 )
 
-func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) error {
+func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	fmt.Printf("Tearing down sandbox: %s\n", envID)
+
+	inputsResolver, err := varresolvers.NewInputsResolver(inputs, m.Inputs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve inputs: %w", err)
+	}
 
 	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, logger.AsDebugLogger())
 	if err != nil {
@@ -41,18 +46,44 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 	}
 	resolvers := &varresolvers.ChainResolver{
 		Resolvers: []varresolvers.Resolver{
+			inputsResolver,
 			varresolvers.NewEnvResolver(),
 			componentResolver,
 		},
 	}
 
-	commandResolvers := shellCommandResolver(componentResolver)
+	commandResolvers := shellCommandResolver(inputsResolver, componentResolver)
 
 	emitter := events.NewRendererEmitter()
 	debugLogger := logger.AsDebugLogger()
 	adapterCtx := adapters.NewAdapterContext(envID, debugLogger, emitter)
 	ctx := adapters.WithAdapterContext(context.Background(), adapterCtx)
-	allRunners, err := runners.FromManifestRunnersMap(m.Runners)
+
+	runnerManifests := make(map[string]manifestcore.RunnerManifest)
+	for _, componentState := range currentState.Components {
+		if componentState.Status == state.StatusDestroyed {
+			continue
+		}
+
+		if _, ok := runnerManifests[componentState.Runner.Name]; ok {
+			continue
+		}
+
+		runnerManifest, ok := m.Runners[componentState.Runner.Name]
+		if !ok {
+			return fmt.Errorf("component %q references unknown runner %q",
+				componentState.Name, componentState.Runner.Name)
+		}
+
+		cfg, err := varresolvers.DeepInterpolate(context.Background(), runnerManifest.Config, resolvers)
+		if err != nil {
+			return fmt.Errorf("failed to interpolate runner %q config: %w", componentState.Runner.Name, err)
+		}
+		runnerManifest.Config = cfg
+		runnerManifests[componentState.Runner.Name] = runnerManifest
+	}
+
+	allRunners, err := runners.FromManifestRunnersMap(runnerManifests)
 	if err != nil {
 		return fmt.Errorf("failed to create runners from manifest: %w", err)
 	}
@@ -68,16 +99,18 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 			return fmt.Errorf("component %q references unknown runner %q",
 				componentState.Name, componentState.Runner.Name)
 		}
+		if t.Type() != componentState.Runner.Type {
+			return fmt.Errorf("component %q was applied with runner %q of type %q, but current manifest defines it as %q",
+				componentState.Name, componentState.Runner.Name, componentState.Runner.Type, t.Type())
+		}
 
 		if yes, list := t.UsesNonAmbientCredentials(); yes {
 			return fmt.Errorf("runner %q uses non-ambient credentials (%v); destroy only supports ambient auth",
 				t.Name(), list)
 		}
 
-		if component, ok := componentsByName[componentState.Name]; ok {
-			if err := validateLifecycleHooksForRunner(component.Name, component.Hooks, t); err != nil {
-				return err
-			}
+		if err := validateDestroyHooksForRunner(componentState.Name, componentState.DestroyHooks, t); err != nil {
+			return err
 		}
 	}
 
@@ -99,18 +132,24 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 			return fmt.Errorf("component %s artifact restore failed: %w", componentState.Name, err)
 		}
 
-		if component, ok := componentsByName[componentState.Name]; ok {
+		runtimeComponent, err := destroyRuntimeComponent(context.Background(), envID, componentState, componentsByName[componentState.Name], t.Name(), resolvers)
+		if err != nil {
+			return err
+		}
+		componentState.Env = runtimeComponent.Env
+
+		if len(componentState.DestroyHooks.PreDestroy) > 0 {
 			currentState.MarkComponentDestroying(componentState.Name, state.StagePreDestroy)
 			if err := stateManager.Save(currentState); err != nil {
 				return fmt.Errorf("failed to save pre_destroy state for component %q: %w", componentState.Name, err)
 			}
-			if err := runLifecycleHooks(ctx, t, component.Hooks.PreDestroy, lifecyclePreDestroy, hookExecutionContext{
+			if err := runLifecycleHooks(ctx, t, componentState.DestroyHooks.PreDestroy, lifecyclePreDestroy, hookExecutionContext{
 				envID:           envID,
-				componentRef:    component,
+				componentRef:    runtimeComponent,
 				component:       componentState.Name,
 				runner:          t.Name(),
 				workDir:         componentState.WorkDir,
-				baseEnv:         component.Env,
+				baseEnv:         runtimeComponent.Env,
 				resolver:        resolvers,
 				commandResolver: commandResolvers,
 				emitter:         emitter,
@@ -128,7 +167,7 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 			return fmt.Errorf("failed to save destroying state for component %q: %w", componentState.Name, err)
 		}
 
-		if err := adapter.DestroyFromState(ctx, componentState, t); err != nil {
+		if err := adapter.Destroy(ctx, componentState, t); err != nil {
 			currentState.MarkComponentFailed(componentState.Name, state.StageDestroy)
 			emitter.Emit(events.Event{
 				Type:      events.EventFailure,
@@ -150,18 +189,18 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger) erro
 			return fmt.Errorf("failed to save state after destroying component %q: %w", componentState.Name, err)
 		}
 
-		if component, ok := componentsByName[componentState.Name]; ok {
+		if len(componentState.DestroyHooks.PostDestroy) > 0 {
 			currentState.MarkComponentDestroying(componentState.Name, state.StagePostDestroy)
 			if err := stateManager.Save(currentState); err != nil {
 				return fmt.Errorf("failed to save post_destroy state for component %q: %w", componentState.Name, err)
 			}
-			if err := runLifecycleHooks(ctx, t, component.Hooks.PostDestroy, lifecyclePostDestroy, hookExecutionContext{
+			if err := runLifecycleHooks(ctx, t, componentState.DestroyHooks.PostDestroy, lifecyclePostDestroy, hookExecutionContext{
 				envID:           envID,
-				componentRef:    component,
+				componentRef:    runtimeComponent,
 				component:       componentState.Name,
 				runner:          t.Name(),
 				workDir:         componentState.WorkDir,
-				baseEnv:         component.Env,
+				baseEnv:         runtimeComponent.Env,
 				resolver:        resolvers,
 				commandResolver: commandResolvers,
 				emitter:         emitter,
@@ -193,4 +232,31 @@ func disconnectAllRunners(allRunners map[string]runners.Runner, emitter events.E
 			})
 		}
 	}
+}
+
+func destroyRuntimeComponent(
+	ctx context.Context,
+	envID string,
+	componentState state.ComponentState,
+	manifestComponent *manifestcore.Component,
+	runnerName string,
+	resolver varresolvers.Resolver,
+) (*manifestcore.Component, error) {
+	component := &manifestcore.Component{
+		Name:   componentState.Name,
+		Type:   componentState.Type,
+		Runner: componentState.Runner.Name,
+		Source: componentState.Source,
+		Env:    map[string]string{},
+	}
+	if manifestComponent != nil {
+		component.Env = manifestComponent.Env
+	}
+
+	resolvedEnv, err := interpolateEnv(ctx, component.Env, resolver)
+	if err != nil {
+		return nil, fmt.Errorf("component %q env interpolation failed during destroy: %w", componentState.Name, err)
+	}
+	component.Env = componentExecutionEnv(envID, component, runnerName, resolvedEnv)
+	return component, nil
 }

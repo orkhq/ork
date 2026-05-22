@@ -192,12 +192,18 @@ For now, normal recovery paths are:
 
 Today, `orch down` still requires the manifest. The manifest tells Orch how to load the state backend and how to reach the runners. State tells Orch what components were applied and what payload/artifacts are needed for adapter teardown.
 
+Component state stores the runner reference, not the full runner config. During `down`, Orch looks up the referenced runner in the current manifest and uses that manifest runner config to connect. Component state also stores unresolved `pre_destroy` and `post_destroy` hook declarations, so teardown uses the destroy hooks that were applied with the component rather than whatever hooks happen to be in the current manifest.
+
+`orch down` accepts the same parameter injection model as `orch up`. Params files, CLI params, and OS environment values can resolve manifest component env and hook env at teardown time. Resolved component env values are passed to destroy hooks and adapter destroy calls, but they are not stored in state.
+
 This does not mean teardown should rely on credentials embedded in the manifest. The intended recovery model is:
 
-- manifest: backend and runner topology
-- state: destroyable component facts
+- manifest: backend config, runner config, and runtime env/input indirection
+- state: destroyable component facts, adapter payload, artifacts, and unresolved destroy hooks
 - runner environment: ambient authority to reach the runner and providers
 
 Runner ambient-auth checks enforce this boundary today. If a runner uses non-ambient credentials from the manifest, `down` blocks by default because teardown would depend on apply-time secret material.
+
+Future work should add drift detection without storing runner credentials in state. The likely shape is a warning-only runner fingerprint: store a canonical, sanitized fingerprint of the applied runner declaration, recompute it from the current manifest during `down`, and warn if the runner definition changed. Fingerprinting should prefer schema-aware sanitization for known runner/provider configs over broad key-name heuristics.
 
 Future Orch Cloud should remove this manifest dependency for teardown by storing enough runtime metadata with the environment. In that model, teardown can run from cloud-managed state and runner identity without checking out the original manifest.

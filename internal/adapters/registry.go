@@ -59,8 +59,7 @@ type ComponentApplyResult struct {
 
 type Adapter interface {
 	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) (ComponentApplyResult, error)
-	Destroy(ctx context.Context, c *manifestcore.Component, r runners.Runner) error
-	DestroyFromState(ctx context.Context, c state.ComponentState, r runners.Runner) error
+	Destroy(ctx context.Context, c state.ComponentState, r runners.Runner) error
 	RequiredCapabilities() runners.Capabilities
 	SupportedSources() ComponentSourceSupport
 

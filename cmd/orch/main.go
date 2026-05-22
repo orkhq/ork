@@ -97,13 +97,19 @@ func main() {
 			if err != nil {
 				return err
 			}
+			params, err := LoadParameters(paramsFile, cliParams)
+			if err != nil {
+				return err
+			}
 			return orchestration.RunDown(envID, m, logger.With(
 				logging.Field{Key: "command", Value: "down"},
 				logging.Field{Key: "manifest", Value: manifestPath},
-			))
+			), params.Merge())
 		},
 	}
 	downCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	downCmd.PersistentFlags().StringArrayVar(&cliParams, "param", []string{}, "Secret in key=value format (repeatable)")
+	downCmd.PersistentFlags().StringVar(&paramsFile, "params-file", "", "Path to YAML or env params file")
 	downCmd.PersistentFlags().StringVarP(&envID, "env-id", "e", "", "Environment ID")
 	_ = downCmd.MarkPersistentFlagRequired("env-id")
 

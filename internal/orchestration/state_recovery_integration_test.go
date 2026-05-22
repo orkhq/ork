@@ -43,11 +43,7 @@ func (a failingDestroyAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	return adapters.ComponentApplyResult{State: state.EmptyComponentStateData(c.WorkDir)}, nil
 }
 
-func (a failingDestroyAdapter) Destroy(ctx context.Context, c *manifestcore.Component, r runners.Runner) error {
-	return nil
-}
-
-func (a failingDestroyAdapter) DestroyFromState(ctx context.Context, c state.ComponentState, r runners.Runner) error {
+func (a failingDestroyAdapter) Destroy(ctx context.Context, c state.ComponentState, r runners.Runner) error {
 	return errors.New("planned destroy failure")
 }
 
@@ -234,7 +230,7 @@ func TestRunDownPersistsFailedDestroyStage(t *testing.T) {
 	})
 	saveState(t, stateRoot, envID, current)
 
-	err := RunDown(envID, manifest, testLogger{})
+	err := RunDown(envID, manifest, testLogger{}, nil)
 	if err == nil {
 		t.Fatal("expected down to fail")
 	}
@@ -245,6 +241,50 @@ func TestRunDownPersistsFailedDestroyStage(t *testing.T) {
 	}
 	if componentState.Stage != state.StageDestroy {
 		t.Fatalf("stage = %q, want %q", componentState.Stage, state.StageDestroy)
+	}
+}
+
+func TestRunDownUsesStoredDestroyHooksAndResolvedManifestEnv(t *testing.T) {
+	stateRoot := t.TempDir()
+	workRoot := t.TempDir()
+	envID := "destroy-hooks"
+	markerFile := filepath.Join(t.TempDir(), "destroy-marker")
+
+	manifest := testManifest(stateRoot, manifestcore.Component{
+		Name:    "setup",
+		Type:    "script",
+		Runner:  "local",
+		WorkDir: workRoot,
+		Source:  manifestcore.ComponentSource{Embedded: "exit 0\n"},
+		Env: map[string]string{
+			"TOKEN_FROM_PARAMS": "${inputs.destroy_token}",
+			"MARKER_FILE":       markerFile,
+		},
+		Hooks: manifestcore.Hooks{
+			PreDestroy: []manifestcore.Hook{{
+				Command: `test "$TOKEN_FROM_PARAMS" = "abc" && echo destroyed > "$MARKER_FILE"`,
+			}},
+		},
+	})
+	manifest.Inputs = map[string]manifestcore.Input{
+		"destroy_token": {},
+	}
+
+	if err := RunUp(envID, manifest, testLogger{}, map[string]string{"destroy_token": "abc"}); err != nil {
+		t.Fatalf("up failed: %v", err)
+	}
+
+	manifest.Components[0].Hooks.PreDestroy = []manifestcore.Hook{{Command: "exit 99"}}
+	if err := RunDown(envID, manifest, testLogger{}, map[string]string{"destroy_token": "abc"}); err != nil {
+		t.Fatalf("down failed: %v", err)
+	}
+
+	data, err := os.ReadFile(markerFile)
+	if err != nil {
+		t.Fatalf("failed to read destroy marker: %v", err)
+	}
+	if strings.TrimSpace(string(data)) != "destroyed" {
+		t.Fatalf("unexpected destroy marker content: %q", data)
 	}
 }
 

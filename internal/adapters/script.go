@@ -137,11 +137,7 @@ func (d *ScriptAdapter) Apply(ctx context.Context, c *manifestcore.Component, t 
 	}, nil
 }
 
-func (d *ScriptAdapter) Destroy(ctx context.Context, c *manifestcore.Component, t runners.Runner) error {
-	return nil
-}
-
-func (d *ScriptAdapter) DestroyFromState(ctx context.Context, c state.ComponentState, t runners.Runner) error {
+func (d *ScriptAdapter) Destroy(ctx context.Context, c state.ComponentState, t runners.Runner) error {
 	return nil
 }
 
