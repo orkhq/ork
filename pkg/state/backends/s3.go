@@ -33,7 +33,8 @@ type s3Client interface {
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 	HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
-	DeleteObject(ctx context.Context, params *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
+	ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
+	DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
 }
 
 type S3 struct {
@@ -143,15 +144,46 @@ func (b *S3) Exists(ctx context.Context, envID string) (bool, error) {
 }
 
 func (b *S3) Delete(ctx context.Context, envID string) error {
-	key := b.stateKey(envID)
-	b.logger.Debug("deleting S3 state", logging.Field{Key: "bucket", Value: b.bucket}, logging.Field{Key: "key", Value: key})
-	_, err := b.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(b.bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to delete S3 state object: %w", err)
+	prefix := b.envKeyPrefix(envID)
+	b.logger.Debug("deleting S3 state environment", logging.Field{Key: "bucket", Value: b.bucket}, logging.Field{Key: "prefix", Value: prefix})
+
+	var continuationToken *string
+	for {
+		listOut, err := b.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket:            aws.String(b.bucket),
+			Prefix:            aws.String(prefix),
+			ContinuationToken: continuationToken,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to list S3 state objects: %w", err)
+		}
+
+		objects := make([]types.ObjectIdentifier, 0, len(listOut.Contents))
+		for _, object := range listOut.Contents {
+			if object.Key == nil {
+				continue
+			}
+			objects = append(objects, types.ObjectIdentifier{Key: object.Key})
+		}
+		if len(objects) > 0 {
+			_, err := b.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+				Bucket: aws.String(b.bucket),
+				Delete: &types.Delete{
+					Objects: objects,
+					Quiet:   aws.Bool(true),
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to delete S3 state objects: %w", err)
+			}
+		}
+
+		if listOut.IsTruncated == nil || !*listOut.IsTruncated {
+			break
+		}
+		continuationToken = listOut.NextContinuationToken
 	}
+
 	return nil
 }
 
@@ -246,6 +278,10 @@ func (b *S3) closeBody(body io.Closer, label string, key string) {
 
 func (b *S3) stateKey(envID string) string {
 	return joinS3Key(b.prefix, envID, "state.json")
+}
+
+func (b *S3) envKeyPrefix(envID string) string {
+	return joinS3Key(b.prefix, envID) + "/"
 }
 
 func (b *S3) artifactKey(envID string, componentName string, artifact state.Artifact) (string, error) {

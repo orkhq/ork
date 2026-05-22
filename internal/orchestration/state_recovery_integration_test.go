@@ -286,6 +286,16 @@ func TestRunDownUsesStoredDestroyHooksAndResolvedManifestEnv(t *testing.T) {
 	if strings.TrimSpace(string(data)) != "destroyed" {
 		t.Fatalf("unexpected destroy marker content: %q", data)
 	}
+
+	backend := statebackends.NewLocal(stateRoot, &logging.NoopDebugLogger{})
+	manager := state.NewManager(envID, backend)
+	exists, err := manager.Exists(context.Background())
+	if err != nil {
+		t.Fatalf("failed to check state existence: %v", err)
+	}
+	if exists {
+		t.Fatal("expected state to be deleted after successful down")
+	}
 }
 
 func testManifest(stateRoot string, components ...manifestcore.Component) *manifestcore.Manifest {

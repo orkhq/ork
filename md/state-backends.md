@@ -150,13 +150,11 @@ S3 state buckets should be private. Because artifacts may contain Terraform stat
 
 ## Delete semantics
 
-Destroy marks components as destroyed and saves the state document. It does not delete the state bundle. Keeping state after destroy is useful for debugging and audit.
+Destroy marks components as destroyed and saves the state document as it progresses, so an interrupted teardown can be retried.
 
-Future work can add an explicit state cleanup command:
+After every component and post-destroy hook succeeds, `orch down` deletes the whole environment state bundle. For the local backend this removes `<root>/<env-id>`, including `state.json` and `artifacts/`. For S3 this deletes every object under `<prefix>/<env-id>/`.
 
-```bash
-orch state rm --env-id pr-123
-```
+If teardown fails before completion, Orch keeps the state bundle so the next `orch down` can retry cleanup with the last captured state and artifacts.
 
 ## Locking and revisions
 

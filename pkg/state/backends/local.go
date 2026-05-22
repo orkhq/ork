@@ -96,10 +96,10 @@ func (b *Local) Exists(ctx context.Context, envID string) (bool, error) {
 }
 
 func (b *Local) Delete(ctx context.Context, envID string) error {
-	stateFile := b.stateFile(envID)
-	b.logger.Debug("deleting local state", logging.Field{Key: "path", Value: stateFile})
-	if err := os.Remove(stateFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to delete state file: %w", err)
+	envDir := b.envDir(envID)
+	b.logger.Debug("deleting local state environment", logging.Field{Key: "path", Value: envDir})
+	if err := os.RemoveAll(envDir); err != nil {
+		return fmt.Errorf("failed to delete state environment: %w", err)
 	}
 	return nil
 }
@@ -138,7 +138,7 @@ func (b *Local) ArtifactExists(ctx context.Context, envID string, componentName 
 }
 
 func (b *Local) stateFile(envID string) string {
-	return filepath.Join(b.root, envID, "state.json")
+	return filepath.Join(b.envDir(envID), "state.json")
 }
 
 func (b *Local) artifactFile(envID string, componentName string, artifact state.Artifact) (string, error) {
@@ -146,7 +146,11 @@ func (b *Local) artifactFile(envID string, componentName string, artifact state.
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(b.root, envID, "artifacts", componentName, filepath.FromSlash(artifactPath)), nil
+	return filepath.Join(b.envDir(envID), "artifacts", componentName, filepath.FromSlash(artifactPath)), nil
+}
+
+func (b *Local) envDir(envID string) string {
+	return filepath.Join(b.root, envID)
 }
 
 func copyLocalFile(source, destination string, mode os.FileMode) error {

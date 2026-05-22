@@ -3,6 +3,7 @@ package orchestration
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"orch.io/internal/adapters"
 	"orch.io/pkg/events"
@@ -105,8 +106,17 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inpu
 		}
 
 		if yes, list := t.UsesNonAmbientCredentials(); yes {
-			return fmt.Errorf("runner %q uses non-ambient credentials (%v); destroy only supports ambient auth",
-				t.Name(), list)
+			emitter.Emit(events.Event{
+				Type: events.EventWarning,
+				Message: fmt.Sprintf(
+					"Runner uses non-ambient credentials (%v). Down will use the current manifest runner config for teardown.",
+					strings.Join(list, ", "),
+				),
+				Hint:      "Prefer ambient authentication for future state-only teardown.",
+				Runner:    t.Name(),
+				Component: componentState.Name,
+				Adapter:   componentState.Type,
+			})
 		}
 
 		if err := validateDestroyHooksForRunner(componentState.Name, componentState.DestroyHooks, t); err != nil {
@@ -216,6 +226,10 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inpu
 				return fmt.Errorf("failed to save post_destroy completion state for component %q: %w", componentState.Name, err)
 			}
 		}
+	}
+
+	if err := stateManager.Delete(); err != nil {
+		return fmt.Errorf("failed to delete state after teardown: %w", err)
 	}
 
 	fmt.Printf("Sandbox torn down\n")

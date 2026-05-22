@@ -1,9 +1,13 @@
 package statebackends
 
 import (
+	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"orch.io/pkg/logging"
+	"orch.io/pkg/state"
 )
 
 func TestNewLocalFromConfig(t *testing.T) {
@@ -33,4 +37,34 @@ func TestNewLocalFromConfig(t *testing.T) {
 			t.Fatal("expected error for unknown local backend config")
 		}
 	})
+}
+
+func TestLocalDeleteRemovesEnvironmentBundle(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	envID := "pr-123"
+	backend := NewLocal(root, &logging.NoopDebugLogger{})
+
+	if err := backend.Save(ctx, envID, state.New(envID, "test", &logging.NoopDebugLogger{})); err != nil {
+		t.Fatalf("failed to save state: %v", err)
+	}
+
+	artifactSource := filepath.Join(t.TempDir(), "terraform.tfstate")
+	if err := os.WriteFile(artifactSource, []byte("{}"), 0600); err != nil {
+		t.Fatalf("failed to write artifact source: %v", err)
+	}
+	if err := backend.SaveArtifact(ctx, envID, "tf", state.Artifact{
+		Name: "tfstate",
+		Path: "terraform.tfstate",
+	}, artifactSource); err != nil {
+		t.Fatalf("failed to save artifact: %v", err)
+	}
+
+	if err := backend.Delete(ctx, envID); err != nil {
+		t.Fatalf("failed to delete state bundle: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(root, envID)); !os.IsNotExist(err) {
+		t.Fatalf("expected environment directory to be deleted, got err=%v", err)
+	}
 }

@@ -1,8 +1,11 @@
 package statebackends
 
 import (
+	"context"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"orch.io/pkg/logging"
 	"orch.io/pkg/state"
@@ -70,4 +73,76 @@ func TestS3KeyLayout(t *testing.T) {
 	if key != "previews/pr-123/artifacts/tf/nested/terraform.tfstate" {
 		t.Fatalf("unexpected artifact key %q", key)
 	}
+}
+
+func TestS3DeleteRemovesEnvironmentPrefix(t *testing.T) {
+	client := &deleteRecordingS3Client{
+		listPages: []*s3.ListObjectsV2Output{
+			{
+				Contents: []types.Object{
+					{Key: aws.String("previews/pr-123/state.json")},
+					{Key: aws.String("previews/pr-123/artifacts/tf/terraform.tfstate")},
+				},
+			},
+		},
+	}
+	backend := NewS3(client, S3Config{
+		Bucket: "orch-state",
+		Prefix: "previews",
+	}, &logging.NoopDebugLogger{})
+
+	if err := backend.Delete(context.Background(), "pr-123"); err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+
+	if client.listPrefix != "previews/pr-123/" {
+		t.Fatalf("list prefix = %q, want %q", client.listPrefix, "previews/pr-123/")
+	}
+	if len(client.deletedKeys) != 2 {
+		t.Fatalf("deleted keys = %v, want 2 keys", client.deletedKeys)
+	}
+	want := map[string]bool{
+		"previews/pr-123/state.json":                     true,
+		"previews/pr-123/artifacts/tf/terraform.tfstate": true,
+	}
+	for _, key := range client.deletedKeys {
+		if !want[key] {
+			t.Fatalf("unexpected deleted key %q", key)
+		}
+	}
+}
+
+type deleteRecordingS3Client struct {
+	listPages   []*s3.ListObjectsV2Output
+	listPrefix  string
+	deletedKeys []string
+}
+
+func (c *deleteRecordingS3Client) GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+	panic("not implemented")
+}
+
+func (c *deleteRecordingS3Client) PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error) {
+	panic("not implemented")
+}
+
+func (c *deleteRecordingS3Client) HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
+	panic("not implemented")
+}
+
+func (c *deleteRecordingS3Client) ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+	c.listPrefix = aws.ToString(params.Prefix)
+	if len(c.listPages) == 0 {
+		return &s3.ListObjectsV2Output{}, nil
+	}
+	page := c.listPages[0]
+	c.listPages = c.listPages[1:]
+	return page, nil
+}
+
+func (c *deleteRecordingS3Client) DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+	for _, object := range params.Delete.Objects {
+		c.deletedKeys = append(c.deletedKeys, aws.ToString(object.Key))
+	}
+	return &s3.DeleteObjectsOutput{}, nil
 }

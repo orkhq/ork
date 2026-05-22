@@ -202,7 +202,7 @@ This does not mean teardown should rely on credentials embedded in the manifest.
 - state: destroyable component facts, adapter payload, artifacts, and unresolved destroy hooks
 - runner environment: ambient authority to reach the runner and providers
 
-Runner ambient-auth checks enforce this boundary today. If a runner uses non-ambient credentials from the manifest, `down` blocks by default because teardown would depend on apply-time secret material.
+Runner ambient-auth checks surface this boundary today. If a runner uses non-ambient credentials from the manifest, `down` warns because teardown depends on the current manifest runner config instead of purely state-backed runtime identity.
 
 Future work should add drift detection without storing runner credentials in state. The likely shape is a warning-only runner fingerprint: store a canonical, sanitized fingerprint of the applied runner declaration, recompute it from the current manifest during `down`, and warn if the runner definition changed. Fingerprinting should prefer schema-aware sanitization for known runner/provider configs over broad key-name heuristics.
 
