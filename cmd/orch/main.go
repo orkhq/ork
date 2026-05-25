@@ -25,6 +25,8 @@ func main() {
 	var envID string
 	var reapply bool
 	var stateInspectOutput string
+	var initForce bool
+	var initID string
 
 	rootCmd := &cobra.Command{
 		Use:           "orch",
@@ -50,6 +52,25 @@ func main() {
 
 		return nil
 	}
+
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Create a starter Orch manifest",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := RunInit(InitOptions{
+				Path:  manifestPath,
+				ID:    initID,
+				Force: initForce,
+			}); err != nil {
+				return err
+			}
+			fmt.Printf("Created %s\n", manifestPath)
+			return nil
+		},
+	}
+	initCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	initCmd.PersistentFlags().StringVar(&initID, "id", "", "Manifest metadata ID (defaults to current directory name)")
+	initCmd.PersistentFlags().BoolVar(&initForce, "force", false, "Overwrite an existing manifest")
 
 	upCmd := &cobra.Command{
 		Use:   "up",
@@ -154,7 +175,7 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(upCmd, downCmd, stateCmd, versionCmd)
+	rootCmd.AddCommand(initCmd, upCmd, downCmd, stateCmd, versionCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

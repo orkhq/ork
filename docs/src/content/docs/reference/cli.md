@@ -13,6 +13,20 @@ orch --debug <command>
 
 Most examples use the long flags. Short aliases are available for common options such as `-e` for `--env-id`, `-f` for `--file`, and `-o` for `--output` on `state inspect`.
 
+## init
+
+```sh
+orch init [--file orch.yaml] [--id my-project] [--force]
+```
+
+Creates a starter manifest. By default, `init` writes `orch.yaml` and refuses to overwrite an existing file.
+
+Flags:
+
+- `--file`, `-f`: manifest path, default `orch.yaml`
+- `--id`: manifest metadata ID, defaulting to the current directory name
+- `--force`: overwrite an existing manifest
+
 ## up
 
 ```sh

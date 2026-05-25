@@ -13,7 +13,14 @@ go build -o bin/orch ./cmd/orch
 
 ## Create A Manifest
 
-Create `orch.yaml`:
+Generate a starter manifest:
+
+```sh
+bin/orch init --id hello
+```
+
+Or create `orch.yaml` manually:
+
 
 ```yaml
 version: orch.io/1.0
