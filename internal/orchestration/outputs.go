@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"fmt"
+	"strings"
 
 	"orch.io/internal/adapters"
 	"orch.io/pkg/events"
@@ -13,6 +14,9 @@ func validateOutputDeclarations(component *manifestcore.Component) error {
 	for _, output := range component.Outputs {
 		if output.Name == "" {
 			return fmt.Errorf("component %q has an output with no name", component.Name)
+		}
+		if isReservedOutputName(output.Name) {
+			return fmt.Errorf("component %q declares reserved output %q", component.Name, output.Name)
 		}
 		if _, ok := seen[output.Name]; ok {
 			return fmt.Errorf("component %q declares output %q more than once", component.Name, output.Name)
@@ -34,7 +38,7 @@ func validateApplyOutputs(component *manifestcore.Component, outputs adapters.Co
 	}
 
 	for outputName := range outputs {
-		if _, ok := declared[outputName]; ok {
+		if _, ok := declared[outputName]; ok || isReservedOutputName(outputName) {
 			continue
 		}
 		emitter.Emit(events.Event{
@@ -50,11 +54,12 @@ func validateApplyOutputs(component *manifestcore.Component, outputs adapters.Co
 }
 
 func filterDeclaredOutputs(component *manifestcore.Component, outputs adapters.ComponentApplyOutput) adapters.ComponentApplyOutput {
-	if len(component.Outputs) == 0 {
-		return adapters.ComponentApplyOutput{}
-	}
-
 	filtered := make(adapters.ComponentApplyOutput)
+	for outputName, value := range outputs {
+		if isReservedOutputName(outputName) {
+			filtered[outputName] = value
+		}
+	}
 	for _, output := range component.Outputs {
 		if value, ok := outputs[output.Name]; ok {
 			filtered[output.Name] = value
@@ -69,6 +74,11 @@ func filterStateOutputs(component *manifestcore.Component, outputs adapters.Comp
 	}
 
 	filtered := make(adapters.ComponentApplyOutput)
+	for outputName, value := range outputs {
+		if isReservedOutputName(outputName) {
+			filtered[outputName] = value
+		}
+	}
 	for _, output := range component.Outputs {
 		if output.Sensitive {
 			continue
@@ -78,4 +88,8 @@ func filterStateOutputs(component *manifestcore.Component, outputs adapters.Comp
 		}
 	}
 	return filtered
+}
+
+func isReservedOutputName(name string) bool {
+	return name == "_meta" || strings.HasPrefix(name, "_meta.")
 }

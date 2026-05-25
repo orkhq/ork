@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -147,25 +148,19 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 		})
 	}
 
-	execCommand := []string{"docker", "compose"}
-	if cfg.Command != "" {
-		execCommand = strings.Split(cfg.Command, " ")
-	}
-
-	if len(cfg.Flags) > 0 {
-		execCommand = append(execCommand, cfg.Flags...)
-	}
-
+	execCommand := d.composeCommand(cfg)
 	for _, cfp := range composeFiles {
 		execCommand = append(execCommand, "-f", cfp)
 	}
 
-	cmd := append(execCommand, "-p", composeProjectName(aCtx.envID, c.Name), "up", "-d")
+	projectName := composeProjectName(aCtx.envID, c.Name)
+	composeEnv := buildOrchManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workDir), c.Name)
+	cmd := append(execCommand, "-p", projectName, "up", "-d")
 
 	execRes, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: workDir,
 		Command:    cmd,
-		Env:        buildOrchManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workDir), c.Name),
+		Env:        composeEnv,
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(c.Runner, c.Name)),
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(c.Runner, c.Name)),
@@ -177,6 +172,11 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 
 	if execRes.Error != nil {
 		return ComponentApplyResult{}, fmt.Errorf("failed to run docker-compose up: %w", execRes.Error)
+	}
+
+	outputs, err := d.capturePortOutputs(ctx, t, workDir, execCommand, projectName, composeEnv, cfg.Services)
+	if err != nil {
+		return ComponentApplyResult{}, err
 	}
 
 	composeState := DockerComposeState{
@@ -192,7 +192,7 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	}
 
 	return ComponentApplyResult{
-		Outputs: make(ComponentApplyOutput),
+		Outputs: outputs,
 		State:   stateData,
 	}, nil
 }
@@ -254,6 +254,69 @@ func (d *DockerComposeAdapter) composeCommand(cfg *DockerComposeConfig) []string
 	return execCommand
 }
 
+func (d *DockerComposeAdapter) capturePortOutputs(
+	ctx context.Context,
+	t runners.Runner,
+	workDir string,
+	composeCommand []string,
+	projectName string,
+	env map[string]string,
+	servicesByFile map[string][]ComposeServiceMetaData,
+) (ComponentApplyOutput, error) {
+	outputs := make(ComponentApplyOutput)
+	portsByService := make(map[string]map[string]composePortBinding)
+	// Docker Compose merges every -f file into one effective project before
+	// running. These outputs intentionally describe that merged service graph,
+	// not the individual compose files where a service or port was declared.
+	services := flattenComposeServices(servicesByFile)
+	for _, service := range services {
+		for _, port := range service.Ports {
+			cmd := append(append([]string{}, composeCommand...), "-p", projectName, "port", service.Name, port)
+			res, err := t.Exec(ctx, runners.ExecCommand{
+				WorkingDir: workDir,
+				Command:    cmd,
+				Env:        env,
+				Timeout:    0,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to inspect docker compose port for service %q port %q: %w", service.Name, port, err)
+			}
+			if res.Error != nil || res.ExitCode != 0 {
+				return nil, fmt.Errorf("docker compose port failed for service %q port %q with exit code %d: %v", service.Name, port, res.ExitCode, res.Error)
+			}
+
+			binding := strings.TrimSpace(string(res.Stdout))
+			if binding == "" {
+				continue
+			}
+			hostPort, err := hostPortFromComposeBinding(binding)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse docker compose binding %q for service %q port %q: %w", binding, service.Name, port, err)
+			}
+
+			if _, ok := portsByService[service.Name]; !ok {
+				portsByService[service.Name] = make(map[string]composePortBinding)
+			}
+			portsByService[service.Name][port] = composePortBinding{
+				Binding:  binding,
+				HostPort: hostPort,
+			}
+		}
+	}
+	for serviceName, ports := range portsByService {
+		for port, binding := range ports {
+			outputs[fmt.Sprintf("_meta.ports.services.%s.%s", serviceName, port)] = binding.HostPort
+			outputs[fmt.Sprintf("_meta.bindings.services.%s.%s", serviceName, port)] = binding.Binding
+		}
+	}
+	return outputs, nil
+}
+
+type composePortBinding struct {
+	Binding  string
+	HostPort string
+}
+
 func buildOrchManagedComposeEnv(
 	base map[string]string,
 	envID string,
@@ -277,9 +340,11 @@ func init() {
 
 // ComposeFile Ports Utilities
 type ComposeFile struct {
-	Services map[string]struct {
-		Ports []string `yaml:"ports"`
-	} `yaml:"services"`
+	Services map[string]ComposeService `yaml:"services"`
+}
+
+type ComposeService struct {
+	Ports []yaml.Node `yaml:"ports"`
 }
 
 type ComposeServiceMetaData struct {
@@ -309,20 +374,125 @@ func loadComposeFileAndExtractServices(filePath string) ([]ComposeServiceMetaDat
 			PublishesPorts: len(service.Ports) > 0,
 		}
 
-		// Check if any port mapping is fixed (i.e., host port specified)
 		for _, port := range service.Ports {
-			if len(strings.Split(port, ":")) > 1 {
-				s.HasFixedPorts = true
-			} else {
-				ports = append(ports, port)
+			containerPort, fixed, ok := composeContainerPort(port)
+			if !ok {
+				continue
 			}
+			if fixed {
+				s.HasFixedPorts = true
+			}
+			ports = append(ports, containerPort)
 		}
 
-		s.Ports = ports
+		s.Ports = uniqueSortedStrings(ports)
 		services = append(services, s)
 	}
 
 	return services, nil
+}
+
+func composeContainerPort(port yaml.Node) (string, bool, bool) {
+	switch port.Kind {
+	case yaml.ScalarNode:
+		return composeContainerPortFromShortSyntax(port.Value)
+	case yaml.MappingNode:
+		return composeContainerPortFromLongSyntax(port)
+	default:
+		return "", false, false
+	}
+}
+
+func composeContainerPortFromShortSyntax(value string) (string, bool, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", false, false
+	}
+
+	withoutProtocol := strings.SplitN(value, "/", 2)[0]
+	parts := strings.Split(withoutProtocol, ":")
+	containerPort := parts[len(parts)-1]
+	if strings.Contains(containerPort, "-") {
+		return "", len(parts) > 1, false
+	}
+	return containerPort, len(parts) > 1, containerPort != ""
+}
+
+func composeContainerPortFromLongSyntax(port yaml.Node) (string, bool, bool) {
+	var target string
+	var fixed bool
+	for i := 0; i+1 < len(port.Content); i += 2 {
+		key := port.Content[i].Value
+		value := strings.TrimSpace(port.Content[i+1].Value)
+		switch key {
+		case "target":
+			target = strings.SplitN(value, "/", 2)[0]
+		case "published":
+			fixed = value != ""
+		}
+	}
+	if target == "" || strings.Contains(target, "-") {
+		return "", fixed, false
+	}
+	return target, fixed, true
+}
+
+func flattenComposeServices(servicesByFile map[string][]ComposeServiceMetaData) []ComposeServiceMetaData {
+	merged := make(map[string]map[string]struct{})
+	for _, services := range servicesByFile {
+		for _, service := range services {
+			if _, ok := merged[service.Name]; !ok {
+				merged[service.Name] = make(map[string]struct{})
+			}
+			for _, port := range service.Ports {
+				merged[service.Name][port] = struct{}{}
+			}
+		}
+	}
+
+	serviceNames := make([]string, 0, len(merged))
+	for serviceName := range merged {
+		serviceNames = append(serviceNames, serviceName)
+	}
+	sort.Strings(serviceNames)
+
+	services := make([]ComposeServiceMetaData, 0, len(serviceNames))
+	for _, serviceName := range serviceNames {
+		services = append(services, ComposeServiceMetaData{
+			Name:  serviceName,
+			Ports: sortedMapKeys(merged[serviceName]),
+		})
+	}
+	return services
+}
+
+func hostPortFromComposeBinding(binding string) (string, error) {
+	hostPort := binding
+	if idx := strings.LastIndex(hostPort, ":"); idx >= 0 {
+		hostPort = hostPort[idx+1:]
+	}
+	hostPort = strings.TrimSpace(hostPort)
+	if hostPort == "" {
+		return "", fmt.Errorf("missing host port")
+	}
+	return hostPort, nil
+}
+
+func uniqueSortedStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		seen[value] = struct{}{}
+	}
+	return sortedMapKeys(seen)
+}
+
+func sortedMapKeys(values map[string]struct{}) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func composeProjectName(envID, componentName string) string {

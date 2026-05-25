@@ -25,7 +25,9 @@ func NewComponentResolver() *ComponentResolver {
 
 // Resolve an expression like "component.outputs.db_url"
 func (r *ComponentResolver) Resolve(ctx context.Context, expr string) (string, error) {
-	parts := strings.Split(expr, ".")
+	// Output names may themselves contain dots for reserved namespaces like
+	// "_meta.ports.services.web.80", so only split component.outputs once.
+	parts := strings.SplitN(expr, ".", 3)
 	if len(parts) != 3 || parts[1] != "outputs" {
 		return "", fmt.Errorf("invalid component output reference: %q", expr)
 	}
@@ -63,7 +65,7 @@ func (r *ComponentResolver) RegisterComponentOutput(componentName string, declar
 	defer r.mutex.Unlock()
 
 	for outputName, value := range outputs {
-		if !slices.ContainsFunc(declared, func(output manifestcore.Output) bool {
+		if !isReservedOutputName(outputName) && !slices.ContainsFunc(declared, func(output manifestcore.Output) bool {
 			return output.Name == outputName
 		}) {
 			continue // skip outputs not defined in the manifest
@@ -72,6 +74,10 @@ func (r *ComponentResolver) RegisterComponentOutput(componentName string, declar
 		r.outputs[key] = value
 		delete(r.unavailableSensitiveOutputRefs, key)
 	}
+}
+
+func isReservedOutputName(name string) bool {
+	return name == "_meta" || strings.HasPrefix(name, "_meta.")
 }
 
 // RegisterPersistedComponentOutput rehydrates outputs that were already filtered

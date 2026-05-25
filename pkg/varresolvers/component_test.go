@@ -54,3 +54,18 @@ func TestComponentResolverFreshOutputClearsUnavailableSensitiveOutput(t *testing
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestComponentResolverSupportsNestedMetaOutputReferences(t *testing.T) {
+	resolver := NewComponentResolver()
+	resolver.RegisterComponentOutput("web", nil, map[string]string{
+		"_meta.ports.services.api.80": "49153",
+	})
+
+	got, err := resolver.Resolve(context.Background(), "web.outputs._meta.ports.services.api.80")
+	if err != nil {
+		t.Fatalf("expected nested _meta output to resolve: %v", err)
+	}
+	if got != "49153" {
+		t.Fatalf("got %q", got)
+	}
+}

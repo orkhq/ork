@@ -12,6 +12,14 @@ type noopEmitter struct{}
 
 func (noopEmitter) Emit(events.Event) {}
 
+type recordingEmitter struct {
+	events []events.Event
+}
+
+func (r *recordingEmitter) Emit(event events.Event) {
+	r.events = append(r.events, event)
+}
+
 func TestValidateApplyOutputsRequiresDeclaredOutputsByDefault(t *testing.T) {
 	component := &manifestcore.Component{
 		Name: "script",
@@ -56,6 +64,34 @@ func TestValidateOutputDeclarationsRejectsDuplicateNames(t *testing.T) {
 	}
 }
 
+func TestValidateOutputDeclarationsRejectsReservedMetaOutput(t *testing.T) {
+	component := &manifestcore.Component{
+		Name: "script",
+		Outputs: []manifestcore.Output{
+			{Name: "_meta.ports.services.web.80"},
+		},
+	}
+
+	if err := validateOutputDeclarations(component); err == nil {
+		t.Fatal("expected reserved _meta output declaration to fail")
+	}
+}
+
+func TestValidateApplyOutputsAllowsReservedMetaOutputs(t *testing.T) {
+	component := &manifestcore.Component{Name: "compose", Type: "docker-compose"}
+	emitter := &recordingEmitter{}
+
+	err := validateApplyOutputs(component, adapters.ComponentApplyOutput{
+		"_meta.ports.services.web.80": "49153",
+	}, emitter)
+	if err != nil {
+		t.Fatalf("expected reserved _meta output to pass: %v", err)
+	}
+	if len(emitter.events) != 0 {
+		t.Fatalf("expected no warning for reserved _meta output, got %d events", len(emitter.events))
+	}
+}
+
 func TestFilterDeclaredOutputsRemovesExtras(t *testing.T) {
 	component := &manifestcore.Component{
 		Name: "script",
@@ -76,6 +112,21 @@ func TestFilterDeclaredOutputsRemovesExtras(t *testing.T) {
 	}
 	if _, ok := filtered["extra"]; ok {
 		t.Fatal("expected extra output to be removed")
+	}
+}
+
+func TestFilterDeclaredOutputsKeepsReservedMetaOutputs(t *testing.T) {
+	component := &manifestcore.Component{Name: "compose"}
+
+	filtered := filterDeclaredOutputs(component, adapters.ComponentApplyOutput{
+		"_meta.ports.services.web.80": "49153",
+		"extra":                       "ignored",
+	})
+	if len(filtered) != 1 {
+		t.Fatalf("expected one output, got %d", len(filtered))
+	}
+	if filtered["_meta.ports.services.web.80"] != "49153" {
+		t.Fatalf("unexpected _meta output: %q", filtered["_meta.ports.services.web.80"])
 	}
 }
 
@@ -100,5 +151,25 @@ func TestFilterStateOutputsRemovesSensitiveOutputs(t *testing.T) {
 	}
 	if filtered["url"] != "http://localhost:8080" {
 		t.Fatalf("unexpected url output: %q", filtered["url"])
+	}
+}
+
+func TestFilterStateOutputsKeepsReservedMetaOutputs(t *testing.T) {
+	component := &manifestcore.Component{
+		Name: "compose",
+		Outputs: []manifestcore.Output{
+			{Name: "token", Sensitive: true},
+		},
+	}
+
+	filtered := filterStateOutputs(component, adapters.ComponentApplyOutput{
+		"token":                       "secret",
+		"_meta.ports.services.web.80": "49153",
+	})
+	if len(filtered) != 1 {
+		t.Fatalf("expected one output, got %d", len(filtered))
+	}
+	if filtered["_meta.ports.services.web.80"] != "49153" {
+		t.Fatalf("unexpected _meta output: %q", filtered["_meta.ports.services.web.80"])
 	}
 }
