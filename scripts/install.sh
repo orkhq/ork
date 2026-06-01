@@ -49,9 +49,8 @@ normalize_arch() {
 }
 
 latest_version() {
-  releases="$(curl -fsSL "https://api.github.com/repos/$repo/releases?per_page=1")"
-  tag="$(printf '%s\n' "$releases" | sed -n 's/^[[:space:]]*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
-  [ -n "$tag" ] || fail "could not resolve latest release for $repo"
+  latest_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")"
+  tag="${latest_url##*/}"
   [ "$tag" != "latest" ] && [ "$tag" != "releases" ] || fail "could not resolve latest release for $repo"
   printf '%s\n' "$tag"
 }
