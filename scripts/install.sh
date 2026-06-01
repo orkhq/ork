@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="${ORCH_REPO:-orchio/orch}"
+repo="${ORCH_REPO:-tryorch/orch}"
 version="${ORCH_VERSION:-latest}"
 install_dir="${ORCH_INSTALL_DIR:-}"
 
