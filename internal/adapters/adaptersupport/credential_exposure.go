@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 var explicitProviderEnvKeys = map[string]struct{}{

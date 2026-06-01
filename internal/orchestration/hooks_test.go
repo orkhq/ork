@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/varresolvers"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/varresolvers"
 )
 
 type fakeHookRunner struct {

@@ -7,10 +7,10 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"orch.io/pkg/logging"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/state"
-	statebackends "orch.io/pkg/state/backends"
+	"orch/pkg/logging"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/state"
+	statebackends "orch/pkg/state/backends"
 )
 
 type StateInspectOptions struct {

@@ -3,7 +3,7 @@ package statebackends
 import (
 	"testing"
 
-	manifestcore "orch.io/pkg/manifest/core"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func TestFromManifest(t *testing.T) {

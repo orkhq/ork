@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"orch.io/internal/adapters"
-	"orch.io/pkg/events"
-	"orch.io/pkg/logging"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	statebackends "orch.io/pkg/state/backends"
-	"orch.io/pkg/varresolvers"
+	"orch/internal/adapters"
+	"orch/pkg/events"
+	"orch/pkg/logging"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	statebackends "orch/pkg/state/backends"
+	"orch/pkg/varresolvers"
 )
 
 func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {

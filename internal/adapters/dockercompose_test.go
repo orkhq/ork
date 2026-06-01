@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"orch.io/pkg/runners"
+	"orch/pkg/runners"
 )
 
 type fakeComposePortRunner struct {

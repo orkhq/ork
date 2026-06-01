@@ -3,9 +3,9 @@ package orchestration
 import (
 	"testing"
 
-	"orch.io/internal/adapters"
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
+	"orch/internal/adapters"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 type noopEmitter struct{}

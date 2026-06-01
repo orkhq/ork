@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	manifestcore "orch.io/pkg/manifest/core"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 type ComponentResolver struct {

@@ -3,8 +3,8 @@ package state
 import (
 	"testing"
 
-	"orch.io/pkg/logging"
-	manifestcore "orch.io/pkg/manifest/core"
+	"orch/pkg/logging"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func TestBeginComponentApplyPreservesDestroyData(t *testing.T) {

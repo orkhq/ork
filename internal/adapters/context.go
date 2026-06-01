@@ -4,8 +4,8 @@ import (
 	"context"
 	"path"
 
-	"orch.io/pkg/events"
-	"orch.io/pkg/logging"
+	"orch/pkg/events"
+	"orch/pkg/logging"
 )
 
 const AdapterContextKey = "__adapter.context"

@@ -36,7 +36,6 @@ go.work.sum
 /.orch/
 /orch/
 bin/
-projectFilesBackup/
 
 # Docs site
 /docs/node_modules/

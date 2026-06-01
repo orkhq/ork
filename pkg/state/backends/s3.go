@@ -17,8 +17,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
 	"github.com/go-viper/mapstructure/v2"
-	"orch.io/pkg/logging"
-	"orch.io/pkg/state"
+	"orch/pkg/logging"
+	"orch/pkg/state"
 )
 
 type S3Config struct {

@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	"orch.io/pkg/utils"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	"orch/pkg/utils"
 )
 
 type CloudFormationAdapter struct{}

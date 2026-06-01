@@ -14,14 +14,14 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
-	"orch.io/internal/adapters/adaptersupport"
-	"orch.io/pkg/logging"
+	"orch/internal/adapters/adaptersupport"
+	"orch/pkg/logging"
 
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	"orch.io/pkg/utils"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	"orch/pkg/utils"
 )
 
 type TerraformAdapter struct{}

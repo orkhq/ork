@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"orch.io/internal/adapters"
-	manifestcore "orch.io/pkg/manifest/core"
+	"orch/internal/adapters"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func TestValidateComponentSourceRejectsMultipleSourceKinds(t *testing.T) {

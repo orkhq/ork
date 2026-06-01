@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"orch.io/internal/adapters"
-	"orch.io/pkg/events"
-	"orch.io/pkg/logging"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	statebackends "orch.io/pkg/state/backends"
+	"orch/internal/adapters"
+	"orch/pkg/events"
+	"orch/pkg/logging"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	statebackends "orch/pkg/state/backends"
 )
 
 type testLogger struct{}

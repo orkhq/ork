@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 	"gopkg.in/yaml.v3"
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	"orch.io/pkg/utils"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	"orch/pkg/utils"
 )
 
 type DockerComposeAdapter struct{}
@@ -66,7 +66,7 @@ func (d *DockerComposeAdapter) ValidateAndLoadConfig(ctx context.Context, c *man
 						"This may lead to port conflicts when multiple instances are deployed.", service.Name),
 					Hint: "Consider using dynamic port mappings or environment variables to avoid conflicts.\n" +
 						"Dynamic port mappings can be specified by omitting the host port (e.g., '8080' instead of '80:8080').\n" +
-						"See more info at https://orch.io/docs/guides/docker-compose#handling-port-conflicts",
+						"Prefer dynamic host ports when running concurrent environments.",
 					Adapter:   c.Type,
 					Runner:    c.Runner,
 					Component: c.Name,

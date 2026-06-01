@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
-	"orch.io/pkg/state"
-	"orch.io/pkg/utils"
-	"orch.io/pkg/varresolvers"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
+	"orch/pkg/state"
+	"orch/pkg/utils"
+	"orch/pkg/varresolvers"
 )
 
 type lifecycleHookPhase string

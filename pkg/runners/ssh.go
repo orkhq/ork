@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
-	"orch.io/pkg/utils"
+	"orch/pkg/utils"
 )
 
 type SSHRunnerConfig struct {

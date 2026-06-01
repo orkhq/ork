@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"orch.io/pkg/runners"
+	"orch/pkg/runners"
 )
 
 func (sm *Manager) CaptureArtifacts(ctx context.Context, component ComponentState, runner runners.Runner) error {

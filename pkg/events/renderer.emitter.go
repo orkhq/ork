@@ -1,7 +1,7 @@
 package events
 
 import (
-	"orch.io/pkg/utils"
+	"orch/pkg/utils"
 )
 
 type RendererEmitter struct {

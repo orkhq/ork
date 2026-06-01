@@ -3,7 +3,7 @@ package orchestration
 import (
 	"testing"
 
-	"orch.io/pkg/state"
+	"orch/pkg/state"
 )
 
 func TestUpActionForExistingComponent(t *testing.T) {

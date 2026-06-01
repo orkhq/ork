@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"orch.io/internal/adapters"
-	"orch.io/pkg/events"
-	manifestcore "orch.io/pkg/manifest/core"
+	"orch/internal/adapters"
+	"orch/pkg/events"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func validateOutputDeclarations(component *manifestcore.Component) error {

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"orch.io/pkg/logging"
-	manifestcore "orch.io/pkg/manifest/core"
-	"orch.io/pkg/runners"
+	"orch/pkg/logging"
+	manifestcore "orch/pkg/manifest/core"
+	"orch/pkg/runners"
 )
 
 type Status string

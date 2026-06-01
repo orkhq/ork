@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	manifestcore "orch.io/pkg/manifest/core"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 type InputsResolver struct {

@@ -44,7 +44,7 @@ jobs:
           BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           go build \
             -trimpath \
-            -ldflags "-s -w -X orch.io/pkg/version.Version=$VERSION -X orch.io/pkg/version.Commit=$GITHUB_SHA -X orch.io/pkg/version.BuildDate=$BUILD_DATE" \
+            -ldflags "-s -w -X orch/pkg/version.Version=$VERSION -X orch/pkg/version.Commit=$GITHUB_SHA -X orch/pkg/version.BuildDate=$BUILD_DATE" \
             -o dist/orch \
             ./cmd/orch
 
@@ -97,7 +97,7 @@ jobs:
           BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           go build \
             -trimpath \
-            -ldflags "-s -w -X orch.io/pkg/version.Version=$GITHUB_REF_NAME -X orch.io/pkg/version.Commit=$GITHUB_SHA -X orch.io/pkg/version.BuildDate=$BUILD_DATE" \
+            -ldflags "-s -w -X orch/pkg/version.Version=$GITHUB_REF_NAME -X orch/pkg/version.Commit=$GITHUB_SHA -X orch/pkg/version.BuildDate=$BUILD_DATE" \
             -o "dist/orch_${GITHUB_REF_NAME}_${{ matrix.suffix }}/orch" \
             ./cmd/orch
           cp README.md LICENSE "dist/orch_${GITHUB_REF_NAME}_${{ matrix.suffix }}/"

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"orch.io/internal/orchestration"
-	"orch.io/internal/scaffold"
-	"orch.io/pkg/logging"
-	"orch.io/pkg/manifest"
-	"orch.io/pkg/utils"
-	"orch.io/pkg/version"
+	"orch/internal/orchestration"
+	"orch/internal/scaffold"
+	"orch/pkg/logging"
+	"orch/pkg/manifest"
+	"orch/pkg/utils"
+	"orch/pkg/version"
 
 	"github.com/spf13/cobra"
 )

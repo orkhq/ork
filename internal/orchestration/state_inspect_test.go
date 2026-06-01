@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"orch.io/pkg/state"
+	"orch/pkg/state"
 )
 
 func TestRenderStateInspectTable(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/go-viper/mapstructure/v2"
-	"orch.io/pkg/logging"
-	"orch.io/pkg/state"
+	"orch/pkg/logging"
+	"orch/pkg/state"
 )
 
 type LocalConfig struct {

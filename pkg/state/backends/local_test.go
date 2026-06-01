@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"orch.io/pkg/logging"
-	"orch.io/pkg/state"
+	"orch/pkg/logging"
+	"orch/pkg/state"
 )
 
 func TestNewLocalFromConfig(t *testing.T) {

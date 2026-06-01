@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-viper/mapstructure/v2"
-	manifestcore "orch.io/pkg/manifest/core"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {

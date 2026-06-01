@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	manifestcore "orch.io/pkg/manifest/core"
+	manifestcore "orch/pkg/manifest/core"
 )
 
 func TestDetectCredentialExposureEnv(t *testing.T) {
