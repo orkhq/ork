@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="${ORCH_REPO:-tryorch/orch}"
+repo="tryorch/orch"
 version="${ORCH_VERSION:-latest}"
 install_dir="${ORCH_INSTALL_DIR:-}"
 
@@ -49,9 +49,10 @@ normalize_arch() {
 }
 
 latest_version() {
-  latest_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")"
-  tag="${latest_url##*/}"
-  [ -n "$tag" ] && [ "$tag" != "latest" ] || fail "could not resolve latest release for $repo"
+  releases="$(curl -fsSL "https://api.github.com/repos/$repo/releases?per_page=1")"
+  tag="$(printf '%s\n' "$releases" | sed -n 's/^[[:space:]]*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+  [ -n "$tag" ] || fail "could not resolve latest release for $repo"
+  [ "$tag" != "latest" ] && [ "$tag" != "releases" ] || fail "could not resolve latest release for $repo"
   printf '%s\n' "$tag"
 }
 
