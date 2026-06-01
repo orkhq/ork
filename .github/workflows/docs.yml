@@ -1,16 +1,6 @@
 name: Docs
 
 on:
-  pull_request:
-    paths:
-      - "docs/**"
-      - ".github/workflows/docs.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "docs/**"
-      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -46,7 +36,6 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Pages
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: npx --yes wrangler@latest pages deploy dist --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch main
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
