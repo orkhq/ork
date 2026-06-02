@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"ork/internal/adapters/adaptersupport"
+	"ork/pkg/logging"
+
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
-	"ork/internal/adapters/adaptersupport"
-	"ork/pkg/logging"
 
 	"ork/pkg/events"
 	manifestcore "ork/pkg/manifest/core"
@@ -212,9 +214,7 @@ func (d *TerraformAdapter) buildState(c *manifestcore.Component, workDir string)
 	}
 
 	vars := make(map[string]string, len(cfg.Vars))
-	for key, value := range cfg.Vars {
-		vars[key] = value
-	}
+	maps.Copy(vars, cfg.Vars)
 
 	terraformState := TerraformState{
 		Vars:    vars,
@@ -301,8 +301,8 @@ func (d *TerraformAdapter) Destroy(ctx context.Context, componentState state.Com
 }
 
 type terraformOutputValue struct {
-	Sensitive bool        `json:"sensitive"`
-	Value     interface{} `json:"value"`
+	Sensitive bool `json:"sensitive"`
+	Value     any  `json:"value"`
 }
 
 func (d *TerraformAdapter) outputs(ctx context.Context, t runners.Runner, workDir string, env map[string]string, runnerName string, componentName string) (ComponentApplyOutput, error) {
@@ -489,6 +489,10 @@ func detectTerraformBackend(modulePath string) (bool, string, error) {
 		}
 		if parseDiags.HasErrors() {
 			return false, "", fmt.Errorf("failed to parse %s: %s", filePath, parseDiags.Error())
+		}
+
+		if file == nil {
+			return false, "", fmt.Errorf("failed to parse %s: no file returned", filePath)
 		}
 
 		content, _, contentDiags := file.Body.PartialContent(&hcl.BodySchema{

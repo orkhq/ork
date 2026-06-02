@@ -11,12 +11,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-viper/mapstructure/v2"
 	"ork/pkg/events"
 	manifestcore "ork/pkg/manifest/core"
 	"ork/pkg/runners"
 	"ork/pkg/state"
 	"ork/pkg/utils"
+
+	"github.com/go-viper/mapstructure/v2"
 )
 
 type ScriptAdapter struct{}
