@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	"orch/pkg/utils"
-	"orch/pkg/varresolvers"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	"ork/pkg/utils"
+	"ork/pkg/varresolvers"
 )
 
 type lifecycleHookPhase string
@@ -148,7 +148,7 @@ func lifecycleHookEnv(ctx context.Context, hookCtx hookExecutionContext, phase l
 	}
 
 	env = componentExecutionEnv(hookCtx.envID, hookCtx.componentRef, hookCtx.runner, hookCtx.workDir, env)
-	env["ORCH_LIFECYCLE"] = string(phase)
+	env["ORK_LIFECYCLE"] = string(phase)
 
 	return env, nil
 }

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"orch/pkg/runners"
+	"ork/pkg/runners"
 )
 
 type fakeComposePortRunner struct {
@@ -83,7 +83,7 @@ func TestDockerComposeCapturePortOutputs(t *testing.T) {
 		}},
 		"/work",
 		[]string{"docker", "compose", "-f", "compose.yml"},
-		"orch_test_web",
+		"ork_test_web",
 		nil,
 		map[string][]ComposeServiceMetaData{
 			"compose.yml": {

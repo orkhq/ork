@@ -3,7 +3,7 @@ package orchestration
 import (
 	"fmt"
 
-	"orch/pkg/state"
+	"ork/pkg/state"
 )
 
 func upActionForExistingComponent(componentState state.ComponentState, options UpOptions) (existingComponentAction, error) {

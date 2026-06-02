@@ -9,7 +9,7 @@ import (
 
 func TestRunInitWritesStarterManifest(t *testing.T) {
 	dir := t.TempDir()
-	manifestPath := filepath.Join(dir, "orch.yaml")
+	manifestPath := filepath.Join(dir, "ork.yaml")
 
 	if err := RunInit(InitOptions{Path: manifestPath, ID: "demo"}); err != nil {
 		t.Fatalf("RunInit failed: %v", err)
@@ -21,11 +21,11 @@ func TestRunInitWritesStarterManifest(t *testing.T) {
 	}
 	content := string(data)
 	for _, expected := range []string{
-		"version: orch/1.0",
+		"version: ork/1.0",
 		"id: demo",
 		"type: local",
 		"type: script",
-		`echo "message=hello from orch" >> "$ORCH_OUTPUT_ENV"`,
+		`echo "message=hello from ork" >> "$ORK_OUTPUT_ENV"`,
 	} {
 		if !strings.Contains(content, expected) {
 			t.Fatalf("manifest missing %q:\n%s", expected, content)
@@ -35,7 +35,7 @@ func TestRunInitWritesStarterManifest(t *testing.T) {
 
 func TestRunInitSanitizesExplicitID(t *testing.T) {
 	dir := t.TempDir()
-	manifestPath := filepath.Join(dir, "orch.yaml")
+	manifestPath := filepath.Join(dir, "ork.yaml")
 
 	if err := RunInit(InitOptions{Path: manifestPath, ID: "My App!"}); err != nil {
 		t.Fatalf("RunInit failed: %v", err)
@@ -52,7 +52,7 @@ func TestRunInitSanitizesExplicitID(t *testing.T) {
 
 func TestRunInitRefusesOverwriteWithoutForce(t *testing.T) {
 	dir := t.TempDir()
-	manifestPath := filepath.Join(dir, "orch.yaml")
+	manifestPath := filepath.Join(dir, "ork.yaml")
 	if err := os.WriteFile(manifestPath, []byte("existing"), 0644); err != nil {
 		t.Fatalf("failed to seed manifest: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestRunInitRefusesOverwriteWithoutForce(t *testing.T) {
 
 func TestRunInitOverwritesWithForce(t *testing.T) {
 	dir := t.TempDir()
-	manifestPath := filepath.Join(dir, "orch.yaml")
+	manifestPath := filepath.Join(dir, "ork.yaml")
 	if err := os.WriteFile(manifestPath, []byte("existing"), 0644); err != nil {
 		t.Fatalf("failed to seed manifest: %v", err)
 	}
@@ -93,10 +93,10 @@ func TestRunInitOverwritesWithForce(t *testing.T) {
 
 func TestSanitizeManifestID(t *testing.T) {
 	tests := map[string]string{
-		"My App":       "my-app",
-		"@personal":    "personal",
-		"orch_demo--x": "orch-demo-x",
-		"!!!":          "orch-demo",
+		"My App":      "my-app",
+		"@personal":   "personal",
+		"ork_demo--x": "ork-demo-x",
+		"!!!":         "ork-demo",
 	}
 
 	for input, expected := range tests {

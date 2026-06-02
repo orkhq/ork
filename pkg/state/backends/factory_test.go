@@ -3,7 +3,7 @@ package statebackends
 import (
 	"testing"
 
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 func TestFromManifest(t *testing.T) {
@@ -16,8 +16,8 @@ func TestFromManifest(t *testing.T) {
 		if !ok {
 			t.Fatalf("expected *Local, got %T", backend)
 		}
-		if local.root != ".orch" {
-			t.Fatalf("expected default root .orch, got %q", local.root)
+		if local.root != ".ork" {
+			t.Fatalf("expected default root .ork, got %q", local.root)
 		}
 	})
 

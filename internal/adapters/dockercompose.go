@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 	"gopkg.in/yaml.v3"
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	"orch/pkg/utils"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	"ork/pkg/utils"
 )
 
 type DockerComposeAdapter struct{}
@@ -154,7 +154,7 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	}
 
 	projectName := composeProjectName(aCtx.envID, c.Name)
-	composeEnv := buildOrchManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workDir), c.Name)
+	composeEnv := buildOrkManagedComposeEnv(c.Env, aCtx.envID, path.Dir(workDir), c.Name)
 	cmd := append(execCommand, "-p", projectName, "up", "-d")
 
 	execRes, err := t.Exec(ctx, runners.ExecCommand{
@@ -182,7 +182,7 @@ func (d *DockerComposeAdapter) Apply(ctx context.Context, c *manifestcore.Compon
 	composeState := DockerComposeState{
 		Command:      d.composeCommand(cfg),
 		ComposeFiles: composeFiles,
-		Env:          buildOrchManagedComposeEnv(nil, aCtx.envID, path.Dir(workDir), c.Name),
+		Env:          buildOrkManagedComposeEnv(nil, aCtx.envID, path.Dir(workDir), c.Name),
 		ProjectName:  composeProjectName(aCtx.envID, c.Name),
 		WorkDir:      workDir,
 	}
@@ -317,7 +317,7 @@ type composePortBinding struct {
 	HostPort string
 }
 
-func buildOrchManagedComposeEnv(
+func buildOrkManagedComposeEnv(
 	base map[string]string,
 	envID string,
 	workDir string,
@@ -329,7 +329,7 @@ func buildOrchManagedComposeEnv(
 	}
 
 	env["COMPOSE_PROJECT_NAME"] = composeProjectName(envID, componentName)
-	env["ORCH_ENV_ID"] = envID
+	env["ORK_ENV_ID"] = envID
 	return env
 }
 
@@ -495,5 +495,5 @@ func sortedMapKeys(values map[string]struct{}) []string {
 }
 
 func composeProjectName(envID, componentName string) string {
-	return fmt.Sprintf("orch_%s_%s", envID, componentName)
+	return fmt.Sprintf("ork_%s_%s", envID, componentName)
 }

@@ -1,16 +1,16 @@
-version: orch/1.0
+version: ork/1.0
 
 metadata:
   id: script-smoke
   description: Local script adapter smoke test
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 
 runners:
   local:
@@ -24,8 +24,8 @@ components:
     workdir: ./tests/script-smoke/.workdir
     source:
       embedded: |
-        echo "token=abc" >> "$ORCH_OUTPUT_ENV"
-        cat > "$ORCH_OUTPUT_JSON" <<'JSON'
+        echo "token=abc" >> "$ORK_OUTPUT_ENV"
+        cat > "$ORK_OUTPUT_JSON" <<'JSON'
         {
           "url": "http://localhost:8080"
         }
@@ -46,7 +46,7 @@ components:
     source:
       embedded: |
         test "$TOKEN_FROM_PRODUCER" = "abc"
-        echo "seen_token=$TOKEN_FROM_PRODUCER" >> "$ORCH_OUTPUT_ENV"
+        echo "seen_token=$TOKEN_FROM_PRODUCER" >> "$ORK_OUTPUT_ENV"
     outputs:
       - name: seen_token
     config: {}

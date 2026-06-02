@@ -5,7 +5,7 @@ description: Where components execute.
 
 Runners are execution targets.
 
-Orch currently supports:
+Ork currently supports:
 
 - `local`
 - `ssh`

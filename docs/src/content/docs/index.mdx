@@ -1,81 +1,81 @@
 ---
-title: Orch
+title: Ork
 description: Ephemeral environment orchestration for preview, test, and development sandboxes.
 template: splash
 ---
 
-<div class="orch-landing">
-  <section class="orch-hero">
+<div class="ork-landing">
+  <section class="ork-hero">
     <div>
-      <p class="orch-eyebrow">Environment orchestration</p>
+      <p class="ork-eyebrow">Environment orchestration</p>
       <h1>Bring up real environments. Tear them down cleanly.</h1>
-      <p class="orch-lead">Orch orchestrates component execution across local and remote runners, capturing state as it goes so every environment can be inspected, retried, and torn down reliably.</p>
-      <div class="orch-actions">
-        <a class="orch-button orch-button-primary" href="/getting-started/quickstart/">Get started</a>
-        <a class="orch-button orch-button-secondary" href="/concepts/environments/">Read concepts</a>
+      <p class="ork-lead">Ork orchestrates component execution across local and remote runners, capturing state as it goes so every environment can be inspected, retried, and torn down reliably.</p>
+      <div class="ork-actions">
+        <a class="ork-button ork-button-primary" href="/getting-started/quickstart/">Get started</a>
+        <a class="ork-button ork-button-secondary" href="/concepts/environments/">Read concepts</a>
       </div>
     </div>
 
-    <aside class="orch-terminal" aria-label="Terminal preview">
-      <div class="orch-terminal-title">Terminal</div>
-      <pre>$ orch up --env-id pr-123{"\n"}<span>[local &gt; setup]</span> apply started{"\n"}<span>[local &gt; setup]</span> outputs captured{"\n\n"}$ orch state inspect --env-id pr-123{"\n"}component  status   stage{"\n"}setup      applied  post_apply{"\n\n"}$ orch down --env-id pr-123{"\n"}<span>[local &gt; setup]</span> destroyed{"\n"}state bundle deleted</pre>
+    <aside class="ork-terminal" aria-label="Terminal preview">
+      <div class="ork-terminal-title">Terminal</div>
+      <pre>$ ork up --env-id pr-123{"\n"}<span>[local &gt; setup]</span> apply started{"\n"}<span>[local &gt; setup]</span> outputs captured{"\n\n"}$ ork state inspect --env-id pr-123{"\n"}component  status   stage{"\n"}setup      applied  post_apply{"\n\n"}$ ork down --env-id pr-123{"\n"}<span>[local &gt; setup]</span> destroyed{"\n"}state bundle deleted</pre>
     </aside>
   </section>
 
-  <section class="orch-band">
-    <div class="orch-section-head">
+  <section class="ork-band">
+    <div class="ork-section-head">
       <h2>One manifest for the messy middle.</h2>
-      <p>Real environments rarely belong to one tool. Orch gives those pieces a shared lifecycle so setup scripts, containers, infrastructure modules, cloud stacks, hooks, and outputs can move together.</p>
+      <p>Real environments rarely belong to one tool. Ork gives those pieces a shared lifecycle so setup scripts, containers, infrastructure modules, cloud stacks, hooks, and outputs can move together.</p>
     </div>
 
-    <div class="orch-tool-grid">
-      <article class="orch-tool-card">
-        <div class="orch-tool-icon">sh</div>
+    <div class="ork-tool-grid">
+      <article class="ork-tool-card">
+        <div class="ork-tool-icon">sh</div>
         <h3>Scripts</h3>
         <p>Run setup, glue code, checks, migrations, and custom automation.</p>
       </article>
-      <article class="orch-tool-card">
-        <div class="orch-tool-icon">DC</div>
+      <article class="ork-tool-card">
+        <div class="ork-tool-icon">DC</div>
         <h3>Docker Compose</h3>
         <p>Bring app services up locally or on a remote runner.</p>
       </article>
-      <article class="orch-tool-card">
-        <div class="orch-tool-icon">TF</div>
+      <article class="ork-tool-card">
+        <div class="ork-tool-icon">TF</div>
         <h3>Terraform</h3>
         <p>Apply modules, capture outputs, and preserve local state artifacts.</p>
       </article>
-      <article class="orch-tool-card">
-        <div class="orch-tool-icon">CF</div>
+      <article class="ork-tool-card">
+        <div class="ork-tool-icon">CF</div>
         <h3>CloudFormation</h3>
         <p>Create AWS stacks and feed stack outputs to later components.</p>
       </article>
     </div>
   </section>
 
-  <section class="orch-band orch-manifest">
-    <aside class="orch-code-card" aria-label="Manifest preview">
-      <div class="orch-filebar"><span>orch.yaml</span></div>
-      <pre><span class="orch-yaml-key">components</span>:{"\n"}  <span class="orch-yaml-key">web</span>:{"\n"}    <span class="orch-yaml-key">type</span>: docker-compose{"\n"}    <span class="orch-yaml-key">runner</span>: local{"\n"}    <span class="orch-yaml-key">source</span>:{"\n"}      <span class="orch-yaml-key">files</span>:{"\n"}        <span class="orch-yaml-key">docker-compose.yml</span>: <span class="orch-yaml-string">./compose.yml</span>{"\n\n"}  <span class="orch-yaml-key">smoke</span>:{"\n"}    <span class="orch-yaml-key">type</span>: script{"\n"}    <span class="orch-yaml-key">depends_on</span>: [web]{"\n"}    <span class="orch-yaml-key">env</span>:{"\n"}      <span class="orch-yaml-key">BASE_URL</span>: <span class="orch-yaml-string">{"\"http://localhost:${web.outputs._meta.ports.services.web.80}\""}</span>{"\n"}    <span class="orch-yaml-key">source</span>:{"\n"}      <span class="orch-yaml-key">embedded</span>: |{"\n"}        <span class="orch-yaml-muted">curl -fsS "$BASE_URL/health"</span></pre>
+  <section class="ork-band ork-manifest">
+    <aside class="ork-code-card" aria-label="Manifest preview">
+      <div class="ork-filebar"><span>ork.yaml</span></div>
+      <pre><span class="ork-yaml-key">components</span>:{"\n"}  <span class="ork-yaml-key">web</span>:{"\n"}    <span class="ork-yaml-key">type</span>: docker-compose{"\n"}    <span class="ork-yaml-key">runner</span>: local{"\n"}    <span class="ork-yaml-key">source</span>:{"\n"}      <span class="ork-yaml-key">files</span>:{"\n"}        <span class="ork-yaml-key">docker-compose.yml</span>: <span class="ork-yaml-string">./compose.yml</span>{"\n\n"}  <span class="ork-yaml-key">smoke</span>:{"\n"}    <span class="ork-yaml-key">type</span>: script{"\n"}    <span class="ork-yaml-key">depends_on</span>: [web]{"\n"}    <span class="ork-yaml-key">env</span>:{"\n"}      <span class="ork-yaml-key">BASE_URL</span>: <span class="ork-yaml-string">{"\"http://localhost:${web.outputs._meta.ports.services.web.80}\""}</span>{"\n"}    <span class="ork-yaml-key">source</span>:{"\n"}      <span class="ork-yaml-key">embedded</span>: |{"\n"}        <span class="ork-yaml-muted">curl -fsS "$BASE_URL/health"</span></pre>
     </aside>
 
-    <div class="orch-manifest-copy">
+    <div class="ork-manifest-copy">
       <h2>Readable enough to review. Structured enough to recover.</h2>
       <p>The manifest stays close to the way developers already describe environments: runners, components, source, outputs, hooks, and state backend configuration.</p>
-      <div class="orch-point-list">
-        <div class="orch-point">Components can depend on outputs from earlier components.</div>
-        <div class="orch-point">Adapters capture payloads and artifacts needed for teardown.</div>
-        <div class="orch-point">State backends keep runtime facts outside the manifest.</div>
+      <div class="ork-point-list">
+        <div class="ork-point">Components can depend on outputs from earlier components.</div>
+        <div class="ork-point">Adapters capture payloads and artifacts needed for teardown.</div>
+        <div class="ork-point">State backends keep runtime facts outside the manifest.</div>
       </div>
     </div>
   </section>
 
-  <section class="orch-band">
-    <div class="orch-section-head">
+  <section class="ork-band">
+    <div class="ork-section-head">
       <h2>Designed around lifecycle, not just launch.</h2>
-      <p>Orch tracks where each component is in the run, captures the operational facts needed to destroy it, and keeps enough context to retry after interruption.</p>
+      <p>Ork tracks where each component is in the run, captures the operational facts needed to destroy it, and keeps enough context to retry after interruption.</p>
     </div>
 
-    <div class="orch-flow">
+    <div class="ork-flow">
       <article>
         <span>01</span>
         <h3>Declare</h3>
@@ -104,9 +104,9 @@ template: splash
     </div>
   </section>
 
-  <section class="orch-band">
-    <h2 class="orch-doc-title">Explore the docs</h2>
-    <div class="orch-doc-grid">
+  <section class="ork-band">
+    <h2 class="ork-doc-title">Explore the docs</h2>
+    <div class="ork-doc-grid">
       <a href="/getting-started/quickstart/">
         <strong>Quickstart</strong>
         <span>Run a local script component, inspect state, and tear it down.</span>
@@ -121,7 +121,7 @@ template: splash
       </a>
       <a href="/security/overview/">
         <strong>Security</strong>
-        <span>Learn how Orch treats state, outputs, SSH, and credentials.</span>
+        <span>Learn how Ork treats state, outputs, SSH, and credentials.</span>
       </a>
     </div>
   </section>

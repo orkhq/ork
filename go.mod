@@ -1,4 +1,4 @@
-module orch
+module ork
 
 go 1.25.4
 

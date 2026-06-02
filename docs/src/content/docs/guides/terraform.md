@@ -15,12 +15,12 @@ components:
       path: ./terraform
 ```
 
-Orch copies the module to the runner, runs `terraform init`, then applies it.
+Ork copies the module to the runner, runs `terraform init`, then applies it.
 
 ## Local Terraform State
 
-If the module does not define its own backend, Orch captures local Terraform state artifacts after apply and restores them before destroy.
+If the module does not define its own backend, Ork captures local Terraform state artifacts after apply and restores them before destroy.
 
-This matters for stateless runners, where the runner workdir may not exist by the time `orch down` runs.
+This matters for stateless runners, where the runner workdir may not exist by the time `ork down` runs.
 
-If the module defines a Terraform backend block, Orch treats Terraform as owning its own state and skips local tfstate artifact capture.
+If the module defines a Terraform backend block, Ork treats Terraform as owning its own state and skips local tfstate artifact capture.

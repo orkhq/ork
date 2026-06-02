@@ -17,8 +17,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
 	"github.com/go-viper/mapstructure/v2"
-	"orch/pkg/logging"
-	"orch/pkg/state"
+	"ork/pkg/logging"
+	"ork/pkg/state"
 )
 
 type S3Config struct {
@@ -102,7 +102,7 @@ func decodeS3Config(rawConfig map[string]interface{}) (S3Config, error) {
 	return cfg, nil
 }
 
-func (b *S3) Load(ctx context.Context, envID string) (*state.OrchState, error) {
+func (b *S3) Load(ctx context.Context, envID string) (*state.OrkState, error) {
 	key := b.stateKey(envID)
 	b.logger.Debug("loading S3 state", logging.Field{Key: "bucket", Value: b.bucket}, logging.Field{Key: "key", Value: key})
 	out, err := b.client.GetObject(ctx, &s3.GetObjectInput{
@@ -122,15 +122,15 @@ func (b *S3) Load(ctx context.Context, envID string) (*state.OrchState, error) {
 		return nil, fmt.Errorf("failed to read S3 state body: %w", err)
 	}
 
-	var orchState state.OrchState
-	if err := json.Unmarshal(data, &orchState); err != nil {
+	var orkState state.OrkState
+	if err := json.Unmarshal(data, &orkState); err != nil {
 		return nil, fmt.Errorf("failed to parse state file: %w", err)
 	}
-	return &orchState, nil
+	return &orkState, nil
 }
 
-func (b *S3) Save(ctx context.Context, envID string, orchState *state.OrchState) error {
-	data, err := json.MarshalIndent(orchState, "", "  ")
+func (b *S3) Save(ctx context.Context, envID string, orkState *state.OrkState) error {
+	data, err := json.MarshalIndent(orkState, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal state: %w", err)
 	}

@@ -1,6 +1,6 @@
 ---
 title: CI Environments
-description: Run Orch from stateless job runners.
+description: Run Ork from stateless job runners.
 ---
 
 CI runners are often stateless. The job that applies an environment may not be the job that destroys it.
@@ -20,7 +20,7 @@ Use an object-store backend when local state will not survive between jobs.
 state:
   backend: s3
   config:
-    bucket: my-orch-state
+    bucket: my-ork-state
     prefix: previews
     region: eu-central-1
 ```

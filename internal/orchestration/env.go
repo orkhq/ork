@@ -3,8 +3,8 @@ package orchestration
 import (
 	"context"
 
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/varresolvers"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/varresolvers"
 )
 
 func componentExecutionEnv(envID string, component *manifestcore.Component, runnerName string, workDir string, base map[string]string) map[string]string {
@@ -13,11 +13,11 @@ func componentExecutionEnv(envID string, component *manifestcore.Component, runn
 		env[key] = value
 	}
 
-	env["ORCH_ENV_ID"] = envID
-	env["ORCH_COMPONENT_NAME"] = component.Name
-	env["ORCH_COMPONENT_TYPE"] = component.Type
-	env["ORCH_RUNNER_NAME"] = runnerName
-	env["ORCH_WORKDIR"] = workDir
+	env["ORK_ENV_ID"] = envID
+	env["ORK_COMPONENT_NAME"] = component.Name
+	env["ORK_COMPONENT_TYPE"] = component.Type
+	env["ORK_RUNNER_NAME"] = runnerName
+	env["ORK_WORKDIR"] = workDir
 
 	return env
 }

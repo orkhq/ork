@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
 )
 
 type ComponentSourceSupport struct {

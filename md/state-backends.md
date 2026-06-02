@@ -1,6 +1,6 @@
 # State backends
 
-Orch has one state backend per manifest. The backend stores the Orch environment state document and any adapter-declared tool-state artifacts needed for teardown.
+Ork has one state backend per manifest. The backend stores the Ork environment state document and any adapter-declared tool-state artifacts needed for teardown.
 
 ## Manifest shape
 
@@ -8,20 +8,20 @@ Orch has one state backend per manifest. The backend stores the Orch environment
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 ```
 
-If `state` is omitted, Orch defaults to the local backend at `.orch`.
+If `state` is omitted, Ork defaults to the local backend at `.ork`.
 
 ```yaml
 state:
   backend: s3
   config:
-    bucket: my-orch-state
+    bucket: my-ork-state
     prefix: previews
     region: us-east-1
     server_side_encryption: aws:kms
-    kms_key_id: alias/orch-state
+    kms_key_id: alias/ork-state
 ```
 
 The factory only dispatches to a backend implementation. Each backend owns its own config decoding and validation so config growth stays local to the backend.
@@ -38,20 +38,20 @@ Backends should preserve this logical layout:
 For local:
 
 ```text
-.orch/pr-123/state.json
-.orch/pr-123/artifacts/tf/terraform.tfstate
+.ork/pr-123/state.json
+.ork/pr-123/artifacts/tf/terraform.tfstate
 ```
 
 For S3:
 
 ```text
-s3://my-orch-state/previews/pr-123/state.json
-s3://my-orch-state/previews/pr-123/artifacts/tf/terraform.tfstate
+s3://my-ork-state/previews/pr-123/state.json
+s3://my-ork-state/previews/pr-123/artifacts/tf/terraform.tfstate
 ```
 
 ## Write ordering
 
-Orch writes component state before and after risky lifecycle steps. Before adapter apply, the component is marked `applying` and the state document is saved. After a successful apply, Orch builds the final component state in memory, captures declared artifacts first, and then writes `state.json` with status `applied`.
+Ork writes component state before and after risky lifecycle steps. Before adapter apply, the component is marked `applying` and the state document is saved. After a successful apply, Ork builds the final component state in memory, captures declared artifacts first, and then writes `state.json` with status `applied`.
 
 This ordering is intentional. A newly written state document should not reference artifacts that failed to persist.
 
@@ -84,7 +84,7 @@ Rules:
 
 Terraform is currently the adapter that needs this. With Terraform's default local backend, `terraform.tfstate` must be preserved or `terraform destroy` cannot know what resources exist on a stateless runner.
 
-If a Terraform module defines its own backend block, Orch treats Terraform as owning its state and skips local tfstate artifact capture.
+If a Terraform module defines its own backend block, Ork treats Terraform as owning its state and skips local tfstate artifact capture.
 
 ```hcl
 terraform {
@@ -103,7 +103,7 @@ restore: state backend -> temp local file -> runner path
 
 This exists because the current runner API and backend API are both path-based. We cannot assume direct runner-to-backend streaming, especially once remote runners and object-store backends are involved.
 
-The temp files are created with `os.CreateTemp("", "orch-artifact-*")`, which means the OS temp directory is used and `*` is replaced by Go with a random suffix. Files are removed after each artifact operation.
+The temp files are created with `os.CreateTemp("", "ork-artifact-*")`, which means the OS temp directory is used and `*` is replaced by Go with a random suffix. Files are removed after each artifact operation.
 
 ## Local backend
 
@@ -113,10 +113,10 @@ Config:
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 ```
 
-`path` is optional and defaults to `.orch`.
+`path` is optional and defaults to `.ork`.
 
 Unknown local config keys are rejected.
 
@@ -128,7 +128,7 @@ Config:
 state:
   backend: s3
   config:
-    bucket: my-orch-state
+    bucket: my-ork-state
     prefix: previews
     region: us-east-1
     server_side_encryption: AES256
@@ -152,9 +152,9 @@ S3 state buckets should be private. Because artifacts may contain Terraform stat
 
 Destroy marks components as destroyed and saves the state document as it progresses, so an interrupted teardown can be retried.
 
-After every component and post-destroy hook succeeds, `orch down` deletes the whole environment state bundle. For the local backend this removes `<root>/<env-id>`, including `state.json` and `artifacts/`. For S3 this deletes every object under `<prefix>/<env-id>/`.
+After every component and post-destroy hook succeeds, `ork down` deletes the whole environment state bundle. For the local backend this removes `<root>/<env-id>`, including `state.json` and `artifacts/`. For S3 this deletes every object under `<prefix>/<env-id>/`.
 
-If teardown fails before completion, Orch keeps the state bundle so the next `orch down` can retry cleanup with the last captured state and artifacts.
+If teardown fails before completion, Ork keeps the state bundle so the next `ork down` can retry cleanup with the last captured state and artifacts.
 
 ## Locking and revisions
 
@@ -166,4 +166,4 @@ This is acceptable for the first local and S3 implementation, but CI can run con
 - lock objects with expiry
 - a stronger backend-specific lock mechanism
 
-The important future rule: two concurrent `orch up` jobs should not silently overwrite each other's state for the same environment.
+The important future rule: two concurrent `ork up` jobs should not silently overwrite each other's state for the same environment.

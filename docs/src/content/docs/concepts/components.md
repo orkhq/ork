@@ -1,9 +1,9 @@
 ---
 title: Components
-description: Components are the units Orch applies and destroys.
+description: Components are the units Ork applies and destroys.
 ---
 
-Components are the units of work in an Orch environment.
+Components are the units of work in an Ork environment.
 
 Each component has:
 
@@ -23,7 +23,7 @@ components:
     runner: local
     source:
       embedded: |
-        echo "token=abc" >> "$ORCH_OUTPUT_ENV"
+        echo "token=abc" >> "$ORK_OUTPUT_ENV"
     outputs:
       - name: token
         sensitive: true

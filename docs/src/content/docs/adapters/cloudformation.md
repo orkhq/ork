@@ -42,7 +42,7 @@ components:
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `stack_name` | string | `orch-<env-id>-<component>` | CloudFormation stack name. |
+| `stack_name` | string | `ork-<env-id>-<component>` | CloudFormation stack name. |
 | `region` | string | AWS CLI default | AWS region passed with `--region` when set. |
 | `parameters` | map of strings | `{}` | Values passed to `--parameter-overrides` as `Key=Value`. |
 | `capabilities` | list of strings | `[]` | Values passed to `--capabilities`, such as `CAPABILITY_IAM`. |
@@ -87,7 +87,7 @@ outputs:
   - name: PublicURL
 ```
 
-If the stack has no outputs, Orch treats that as an empty output set.
+If the stack has no outputs, Ork treats that as an empty output set.
 
 ## Apply Behavior
 

@@ -3,7 +3,7 @@ package manifestparsers
 import (
 	"fmt"
 
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 type Parser interface {
@@ -11,7 +11,7 @@ type Parser interface {
 }
 
 var registry = map[string]Parser{
-	"orch/1.0": &V1Parser{},
+	"ork/1.0": &V1Parser{},
 }
 
 func Get(version string) (Parser, error) {

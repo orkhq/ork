@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 var explicitProviderEnvKeys = map[string]struct{}{
@@ -94,7 +94,7 @@ func credentialExposureWarning(c *manifestcore.Component, refs []string) events.
 	return events.Event{
 		Type: events.EventWarning,
 		Message: fmt.Sprintf(
-			"Component environment contains keys that look like access mechanisms (%s). Orch will pass these values to runner processes.",
+			"Component environment contains keys that look like access mechanisms (%s). Ork will pass these values to runner processes.",
 			strings.Join(refs, ", "),
 		),
 		Hint:      "Prefer ambient auth, runner-local secret injection, or short-lived environment values when possible.",

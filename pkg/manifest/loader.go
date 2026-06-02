@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
-	"orch/pkg/logging"
-	manifestcore "orch/pkg/manifest/core"
-	manifestparsers "orch/pkg/manifest/parsers"
+	"ork/pkg/logging"
+	manifestcore "ork/pkg/manifest/core"
+	manifestparsers "ork/pkg/manifest/parsers"
 )
 
 type VersionedManifest struct {

@@ -3,11 +3,11 @@ title: Security Overview
 description: Current security posture and boundaries.
 ---
 
-Orch is an orchestration tool, not a secret manager.
+Ork is an orchestration tool, not a secret manager.
 
 The current security posture is built around a few boundaries:
 
-- Do not persist sensitive outputs in Orch state.
+- Do not persist sensitive outputs in Ork state.
 - Treat state backends and artifacts as sensitive operational data.
 - Prefer ambient authentication for runners and cloud providers.
 - Avoid logging command invocations and environment values by default.
@@ -15,9 +15,9 @@ The current security posture is built around a few boundaries:
 
 ## Sensitive Outputs
 
-Sensitive outputs are available during the same `orch up` process that produced them. They are not persisted in state.
+Sensitive outputs are available during the same `ork up` process that produced them. They are not persisted in state.
 
-If a later run needs a sensitive output from a skipped component, Orch fails clearly instead of inventing or leaking a value.
+If a later run needs a sensitive output from a skipped component, Ork fails clearly instead of inventing or leaking a value.
 
 ## State
 
@@ -27,6 +27,6 @@ Store local state outside source control. Keep object-store state private and en
 
 ## Teardown
 
-Today, `orch down` still needs the manifest so it can load the state backend and runner topology.
+Today, `ork down` still needs the manifest so it can load the state backend and runner topology.
 
 Future hosted workflows may remove that manifest dependency by loading state and runner identity from a managed control plane.

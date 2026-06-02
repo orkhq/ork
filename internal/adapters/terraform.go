@@ -14,14 +14,14 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
-	"orch/internal/adapters/adaptersupport"
-	"orch/pkg/logging"
+	"ork/internal/adapters/adaptersupport"
+	"ork/pkg/logging"
 
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	"orch/pkg/utils"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	"ork/pkg/utils"
 )
 
 type TerraformAdapter struct{}
@@ -62,7 +62,7 @@ func (d *TerraformAdapter) ValidateAndLoadConfig(ctx context.Context, c *manifes
 		return nil, nil, fmt.Errorf("failed to get adapter context")
 	}
 
-	compWorkDir := adapterCtx.GetComponentWorkDirInOrchLocalWorkDir(c.Name)
+	compWorkDir := adapterCtx.GetComponentWorkDirInOrkLocalWorkDir(c.Name)
 	modulePath, err := loadAndGetTerraformModulePath(c.Source, compWorkDir)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to resolve terraform module path: %w", err)
@@ -262,7 +262,7 @@ func (d *TerraformAdapter) Destroy(ctx context.Context, componentState state.Com
 
 	modulePath, err := loadAndGetTerraformModulePath(
 		componentState.Source,
-		aCtx.GetComponentWorkDirInOrchLocalWorkDir(componentState.Name),
+		aCtx.GetComponentWorkDirInOrkLocalWorkDir(componentState.Name),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to resolve terraform module path for destroy: %w", err)
@@ -386,7 +386,7 @@ func stageTerraformSource(modulePath string) (string, func(), error) {
 	// Destroy restores tool artifacts before copying source back to the runner.
 	// Stage a source-only module copy so stale local tfstate or .terraform data
 	// from the input module cannot overwrite the restored artifacts.
-	tmpDir, err := os.MkdirTemp("", "orch-terraform-module-*")
+	tmpDir, err := os.MkdirTemp("", "ork-terraform-module-*")
 	if err != nil {
 		return "", func() {}, fmt.Errorf("failed to create temporary terraform module directory: %w", err)
 	}

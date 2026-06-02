@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"orch/internal/orchestration"
-	"orch/internal/scaffold"
-	"orch/pkg/logging"
-	"orch/pkg/manifest"
-	"orch/pkg/utils"
-	"orch/pkg/version"
+	"ork/internal/orchestration"
+	"ork/internal/scaffold"
+	"ork/pkg/logging"
+	"ork/pkg/manifest"
+	"ork/pkg/utils"
+	"ork/pkg/version"
 
 	"github.com/spf13/cobra"
 )
@@ -30,8 +30,8 @@ func main() {
 	var initID string
 
 	rootCmd := &cobra.Command{
-		Use:           "orch",
-		Short:         "Orch — ephemeral sandbox orchestrator",
+		Use:           "ork",
+		Short:         "Ork — ephemeral sandbox orchestrator",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		CompletionOptions: cobra.CompletionOptions{
@@ -56,7 +56,7 @@ func main() {
 
 	initCmd := &cobra.Command{
 		Use:   "init",
-		Short: "Create a starter Orch manifest",
+		Short: "Create a starter Ork manifest",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := scaffold.RunInit(scaffold.InitOptions{
 				Path:  manifestPath,
@@ -69,7 +69,7 @@ func main() {
 			return nil
 		},
 	}
-	initCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	initCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "ork.yaml", "Path to manifest")
 	initCmd.PersistentFlags().StringVar(&initID, "id", "", "Manifest metadata ID (defaults to current directory name)")
 	initCmd.PersistentFlags().BoolVar(&initForce, "force", false, "Overwrite an existing manifest")
 
@@ -100,7 +100,7 @@ func main() {
 		},
 	}
 
-	upCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	upCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "ork.yaml", "Path to manifest")
 	upCmd.PersistentFlags().StringArrayVar(&cliParams, "param", []string{}, "Secret in key=value format (repeatable)")
 	upCmd.PersistentFlags().StringVar(&paramsFile, "params-file", "", "Path to YAML or env params file")
 	upCmd.PersistentFlags().StringVarP(&envID, "env-id", "e", "", "Environment ID")
@@ -129,7 +129,7 @@ func main() {
 			), params.Merge())
 		},
 	}
-	downCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	downCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "ork.yaml", "Path to manifest")
 	downCmd.PersistentFlags().StringArrayVar(&cliParams, "param", []string{}, "Secret in key=value format (repeatable)")
 	downCmd.PersistentFlags().StringVar(&paramsFile, "params-file", "", "Path to YAML or env params file")
 	downCmd.PersistentFlags().StringVarP(&envID, "env-id", "e", "", "Environment ID")
@@ -137,7 +137,7 @@ func main() {
 
 	stateCmd := &cobra.Command{
 		Use:   "state",
-		Short: "Inspect and manage Orch state",
+		Short: "Inspect and manage Ork state",
 	}
 
 	stateInspectCmd := &cobra.Command{
@@ -162,7 +162,7 @@ func main() {
 			})
 		},
 	}
-	stateInspectCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "orch.yaml", "Path to manifest")
+	stateInspectCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "ork.yaml", "Path to manifest")
 	stateInspectCmd.PersistentFlags().StringVarP(&envID, "env-id", "e", "", "Environment ID")
 	stateInspectCmd.PersistentFlags().StringVarP(&stateInspectOutput, "output", "o", "table", "Output format: table or json")
 	_ = stateInspectCmd.MarkPersistentFlagRequired("env-id")

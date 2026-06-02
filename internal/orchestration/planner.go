@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 // TopologicallySortComponents sorts the given components based on their dependencies

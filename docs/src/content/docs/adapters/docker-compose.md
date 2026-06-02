@@ -59,13 +59,13 @@ config:
 
 ## Environment
 
-Component `env` values are passed to Compose. Orch also sets:
+Component `env` values are passed to Compose. Ork also sets:
 
 | Variable | Description |
 | --- | --- |
-| `COMPOSE_PROJECT_NAME` | Stable Orch-managed project name derived from environment ID and component name. |
-| `ORCH_ENV_ID` | Current Orch environment ID. |
-| `ORCH_WORKDIR` | Component workdir on the runner. |
+| `COMPOSE_PROJECT_NAME` | Stable Ork-managed project name derived from environment ID and component name. |
+| `ORK_ENV_ID` | Current Ork environment ID. |
+| `ORK_WORKDIR` | Component workdir on the runner. |
 
 ## Outputs
 
@@ -84,7 +84,7 @@ env:
 | `_meta.ports.services.<service>.<containerPort>` | `64313` | Host port parsed from Docker Compose's published binding. |
 | `_meta.bindings.services.<service>.<containerPort>` | `0.0.0.0:64313` | Raw binding returned by `docker compose port`. |
 
-The `_meta` namespace is reserved for Orch-generated operational metadata. It does not need to be declared in `outputs`.
+The `_meta` namespace is reserved for Ork-generated operational metadata. It does not need to be declared in `outputs`.
 
 Port metadata is captured after `up -d` by running:
 
@@ -104,7 +104,7 @@ Apply does the following:
 4. Captures `_meta` port and binding outputs for declared Compose service ports.
 5. Stores command, compose files, environment, project name, and workdir in component state.
 
-Orch warns when fixed host ports are declared because they can conflict across concurrent environments.
+Ork warns when fixed host ports are declared because they can conflict across concurrent environments.
 
 ## Destroy Behavior
 

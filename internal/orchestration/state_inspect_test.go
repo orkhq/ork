@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"orch/pkg/state"
+	"ork/pkg/state"
 )
 
 func TestRenderStateInspectTable(t *testing.T) {
-	current := &state.OrchState{
+	current := &state.OrkState{
 		EnvID:      "pr-123",
 		ManifestID: "preview",
 		UpdatedAt:  "2026-05-17T12:00:00Z",
@@ -60,7 +60,7 @@ func TestRenderStateInspectTable(t *testing.T) {
 }
 
 func TestRenderStateInspectJSON(t *testing.T) {
-	current := &state.OrchState{
+	current := &state.OrkState{
 		EnvID:      "pr-123",
 		ManifestID: "preview",
 	}
@@ -70,7 +70,7 @@ func TestRenderStateInspectJSON(t *testing.T) {
 		t.Fatalf("render failed: %v", err)
 	}
 
-	var decoded state.OrchState
+	var decoded state.OrkState
 	if err := json.Unmarshal(out.Bytes(), &decoded); err != nil {
 		t.Fatalf("invalid json: %v", err)
 	}
@@ -89,10 +89,10 @@ func TestRecoveryHints(t *testing.T) {
 	if len(hints) != 3 {
 		t.Fatalf("expected 3 hints, got %d", len(hints))
 	}
-	if !strings.Contains(hints[0], "orch up") {
+	if !strings.Contains(hints[0], "ork up") {
 		t.Fatalf("expected apply-side hint to mention up: %q", hints[0])
 	}
-	if !strings.Contains(hints[1], "orch down") || strings.Contains(hints[1], "orch up") {
+	if !strings.Contains(hints[1], "ork down") || strings.Contains(hints[1], "ork up") {
 		t.Fatalf("expected destroy-side hint to mention only down: %q", hints[1])
 	}
 }

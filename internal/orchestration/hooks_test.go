@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/varresolvers"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/varresolvers"
 )
 
 type fakeHookRunner struct {
@@ -68,7 +68,7 @@ func TestRunLifecycleHooksInterpolatesCommandAndEnv(t *testing.T) {
 		componentRef: component,
 		component:    "api",
 		runner:       "local",
-		workDir:      "/tmp/orch/test-env/api",
+		workDir:      "/tmp/ork/test-env/api",
 		baseEnv:      map[string]string{"BASE": "present"},
 		resolver:     componentResolver,
 		emitter:      emitter,
@@ -88,11 +88,11 @@ func TestRunLifecycleHooksInterpolatesCommandAndEnv(t *testing.T) {
 	if hookCommand.Env["DATABASE_URL"] != "postgres://localhost:5432/app" {
 		t.Fatalf("expected interpolated hook env, got %q", hookCommand.Env["DATABASE_URL"])
 	}
-	if hookCommand.Env["ORCH_LIFECYCLE"] != string(lifecyclePreApply) {
-		t.Fatalf("expected ORCH_LIFECYCLE, got %q", hookCommand.Env["ORCH_LIFECYCLE"])
+	if hookCommand.Env["ORK_LIFECYCLE"] != string(lifecyclePreApply) {
+		t.Fatalf("expected ORK_LIFECYCLE, got %q", hookCommand.Env["ORK_LIFECYCLE"])
 	}
-	if hookCommand.Env["ORCH_WORKDIR"] != "/tmp/orch/test-env/api" {
-		t.Fatalf("expected ORCH_WORKDIR, got %q", hookCommand.Env["ORCH_WORKDIR"])
+	if hookCommand.Env["ORK_WORKDIR"] != "/tmp/ork/test-env/api" {
+		t.Fatalf("expected ORK_WORKDIR, got %q", hookCommand.Env["ORK_WORKDIR"])
 	}
 	if hookCommand.Env["BASE"] != "present" {
 		t.Fatalf("expected base env to be preserved")
@@ -124,11 +124,11 @@ func TestRunLifecycleHooksFailsOnMissingInterpolation(t *testing.T) {
 }
 
 func TestRunLifecycleHooksDoesNotUseEnvResolverForCommands(t *testing.T) {
-	t.Setenv("ORCH_TEST_COMMAND_SECRET", "secret")
+	t.Setenv("ORK_TEST_COMMAND_SECRET", "secret")
 
 	runner := &fakeHookRunner{}
 	err := runLifecycleHooks(context.Background(), runner, []manifestcore.Hook{
-		{Command: `echo "${ORCH_TEST_COMMAND_SECRET}"`},
+		{Command: `echo "${ORK_TEST_COMMAND_SECRET}"`},
 	}, lifecyclePreApply, hookExecutionContext{
 		envID:        "test-env",
 		componentRef: &manifestcore.Component{Name: "api", Type: "script"},
@@ -144,20 +144,20 @@ func TestRunLifecycleHooksDoesNotUseEnvResolverForCommands(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected command interpolation through env resolver to fail")
 	}
-	if !strings.Contains(err.Error(), "ORCH_TEST_COMMAND_SECRET") {
+	if !strings.Contains(err.Error(), "ORK_TEST_COMMAND_SECRET") {
 		t.Fatalf("expected missing command interpolation error to mention env name, got %v", err)
 	}
 }
 
 func TestRunLifecycleHooksStillUsesEnvResolverForHookEnv(t *testing.T) {
-	t.Setenv("ORCH_TEST_HOOK_ENV", "from-os-env")
+	t.Setenv("ORK_TEST_HOOK_ENV", "from-os-env")
 
 	runner := &fakeHookRunner{}
 	err := runLifecycleHooks(context.Background(), runner, []manifestcore.Hook{
 		{
 			Command: "true",
 			Env: map[string]string{
-				"FROM_ENV": "${ORCH_TEST_HOOK_ENV}",
+				"FROM_ENV": "${ORK_TEST_HOOK_ENV}",
 			},
 		},
 	}, lifecyclePreApply, hookExecutionContext{

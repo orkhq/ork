@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 func TestComponentResolverUnavailableSensitiveOutput(t *testing.T) {

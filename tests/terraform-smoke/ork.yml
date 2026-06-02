@@ -1,16 +1,16 @@
-version: orch/1.0
+version: ork/1.0
 
 metadata:
   id: terraform-smoke
   description: Local Terraform smoke test
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 
 runners:
   local:
@@ -29,5 +29,5 @@ components:
         }
 
         resource "terraform_data" "smoke" {
-          input = "orch terraform smoke"
+          input = "ork terraform smoke"
         }

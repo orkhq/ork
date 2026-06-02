@@ -31,7 +31,7 @@ terraform {
 		modulePath := t.TempDir()
 		writeTestFile(t, filepath.Join(modulePath, "main.tf"), `
 resource "terraform_data" "smoke" {
-  input = "orch"
+  input = "ork"
 }
 `)
 

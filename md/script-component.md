@@ -11,8 +11,8 @@ components:
     runner: local
     source:
       embedded: |
-        echo "token=abc" >> "$ORCH_OUTPUT_ENV"
-        jq -n --arg url "http://localhost:8080" '{api_url: $url}' > "$ORCH_OUTPUT_JSON"
+        echo "token=abc" >> "$ORK_OUTPUT_ENV"
+        jq -n --arg url "http://localhost:8080" '{api_url: $url}' > "$ORK_OUTPUT_JSON"
     outputs:
       - name: token
       - name: api_url
@@ -43,22 +43,22 @@ Scripts run source files, not inline command strings, so the default does not in
 
 ## Outputs
 
-Orch sets two managed environment variables for scripts:
+Ork sets two managed environment variables for scripts:
 
-- `ORCH_OUTPUT_ENV`
-- `ORCH_OUTPUT_JSON`
+- `ORK_OUTPUT_ENV`
+- `ORK_OUTPUT_JSON`
 
 The script can append dotenv-style values:
 
 ```sh
-echo "token=abc" >> "$ORCH_OUTPUT_ENV"
-echo "api_url=http://localhost:8080" >> "$ORCH_OUTPUT_ENV"
+echo "token=abc" >> "$ORK_OUTPUT_ENV"
+echo "api_url=http://localhost:8080" >> "$ORK_OUTPUT_ENV"
 ```
 
 It can also write JSON:
 
 ```sh
-cat > "$ORCH_OUTPUT_JSON" <<'JSON'
+cat > "$ORK_OUTPUT_JSON" <<'JSON'
 {
   "token": "abc",
   "api_url": "http://localhost:8080"
@@ -66,11 +66,11 @@ cat > "$ORCH_OUTPUT_JSON" <<'JSON'
 JSON
 ```
 
-If both files are present, Orch reads dotenv first and JSON second. JSON wins when both files contain the same output key.
+If both files are present, Ork reads dotenv first and JSON second. JSON wins when both files contain the same output key.
 
 JSON output values may be strings, numbers, booleans, or null. Objects and arrays are rejected until output typing exists.
 
-Because Orch interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside manifest commands when you want the runner shell to expand them.
+Because Ork interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside manifest commands when you want the runner shell to expand them.
 
 ## Output schema
 
@@ -88,7 +88,7 @@ outputs:
 
 `name` is required. `required` defaults to `true`.
 
-After every component apply, Orch enforces the output schema:
+After every component apply, Ork enforces the output schema:
 
 - missing required outputs fail the apply
 - missing optional outputs are allowed

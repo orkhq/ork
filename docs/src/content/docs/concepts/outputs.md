@@ -38,9 +38,9 @@ Outputs are required by default.
 
 ## Sensitive Outputs
 
-Sensitive outputs are available during the same `orch up` process that produced them, but they are not persisted in state.
+Sensitive outputs are available during the same `ork up` process that produced them, but they are not persisted in state.
 
-If a later run skips the producer because it is already applied, sensitive outputs from that producer are unavailable. Orch fails clearly rather than inventing or leaking the value.
+If a later run skips the producer because it is already applied, sensitive outputs from that producer are unavailable. Ork fails clearly rather than inventing or leaking the value.
 
 ## Reserved Metadata Outputs
 
@@ -51,20 +51,20 @@ env:
   BASE_URL: "http://localhost:${web.outputs._meta.ports.services.web.80}"
 ```
 
-Users cannot declare outputs named `_meta` or beginning with `_meta.`. Orch keeps these values available for interpolation and state because they are adapter metadata, not user-declared outputs.
+Users cannot declare outputs named `_meta` or beginning with `_meta.`. Ork keeps these values available for interpolation and state because they are adapter metadata, not user-declared outputs.
 
 ## Script Outputs
 
 Script components can write outputs to either file:
 
 ```sh
-echo "url=http://localhost:8080" >> "$ORCH_OUTPUT_ENV"
+echo "url=http://localhost:8080" >> "$ORK_OUTPUT_ENV"
 ```
 
 or:
 
 ```sh
-cat > "$ORCH_OUTPUT_JSON" <<'JSON'
+cat > "$ORK_OUTPUT_JSON" <<'JSON'
 {
   "url": "http://localhost:8080"
 }

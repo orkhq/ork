@@ -3,8 +3,8 @@ package orchestration
 import (
 	"fmt"
 
-	"orch/internal/adapters"
-	manifestcore "orch/pkg/manifest/core"
+	"ork/internal/adapters"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 func validateComponentSource(component *manifestcore.Component, adapter adapters.Adapter) error {

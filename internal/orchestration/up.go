@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"orch/internal/adapters"
-	"orch/internal/adapters/adaptersupport"
-	"orch/pkg/events"
-	"orch/pkg/logging"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	statebackends "orch/pkg/state/backends"
-	"orch/pkg/varresolvers"
+	"ork/internal/adapters"
+	"ork/internal/adapters/adaptersupport"
+	"ork/pkg/events"
+	"ork/pkg/logging"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	statebackends "ork/pkg/state/backends"
+	"ork/pkg/varresolvers"
 )
 
 type job struct {
@@ -104,7 +104,7 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 			emitter.Emit(events.Event{
 				Type: events.EventWarning,
 				Message: fmt.Sprintf(
-					"Runner uses non-ambient credentials (%v). This component cannot be reliably torn down by Orch.",
+					"Runner uses non-ambient credentials (%v). This component cannot be reliably torn down by Ork.",
 					strings.Join(list, ", "),
 				),
 				Hint:      "Use ambient authentication for the runner to enable safe teardown of this component.",

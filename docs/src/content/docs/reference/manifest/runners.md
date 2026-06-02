@@ -32,7 +32,7 @@ Adapters declare required runner capabilities. For example, all current adapters
 
 ## Local
 
-The local runner executes commands on the same machine as the Orch process.
+The local runner executes commands on the same machine as the Ork process.
 
 ```yaml
 runners:
@@ -71,7 +71,7 @@ Config fields:
 | `user` | Yes | None | SSH username. |
 | `auth.method` | Yes | None | `password` or `key`. |
 | `auth.password` | For password auth | Empty | Password value. Prefer injecting it from inputs or the environment, not hard-coding it. |
-| `auth.key_path` | For key auth | Empty | Local private key path read by Orch. |
+| `auth.key_path` | For key auth | Empty | Local private key path read by Ork. |
 | `host_key.known_hosts` | One host key mode required | Empty | Known hosts file used for host key verification. |
 | `host_key.insecure` | One host key mode required | `false` | Disables host key verification. Use only for disposable development hosts. |
 
@@ -79,6 +79,6 @@ Exactly one host key mode must be configured: `host_key.known_hosts` or `host_ke
 
 ## Providers
 
-`providers` is runner-level provider bootstrap configuration. Orch translates provider settings into runner environment values before adapter commands run.
+`providers` is runner-level provider bootstrap configuration. Ork translates provider settings into runner environment values before adapter commands run.
 
-Provider values can grant access to cloud APIs. Orch warns when provider settings use non-ambient credentials because those values may be unavailable during later teardown unless the same manifest inputs are supplied again.
+Provider values can grant access to cloud APIs. Ork warns when provider settings use non-ambient credentials because those values may be unavailable during later teardown unless the same manifest inputs are supplied again.

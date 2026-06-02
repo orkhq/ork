@@ -1,11 +1,11 @@
 ---
 title: Introduction
-description: What Orch is and when to use it.
+description: What Ork is and when to use it.
 ---
 
-Orch is an environment orchestration tool for short-lived infrastructure and application sandboxes.
+Ork is an environment orchestration tool for short-lived infrastructure and application sandboxes.
 
-You define an environment in `orch.yaml`. Orch applies each component in dependency order, captures component outputs, persists operational state, and can later destroy the environment from that state.
+You define an environment in `ork.yaml`. Ork applies each component in dependency order, captures component outputs, persists operational state, and can later destroy the environment from that state.
 
 ## Good Fits
 
@@ -17,7 +17,7 @@ You define an environment in `orch.yaml`. Orch applies each component in depende
 
 ## Current Shape
 
-Orch is alpha software. The current implementation focuses on making the lifecycle reliable before broadening the ecosystem.
+Ork is alpha software. The current implementation focuses on making the lifecycle reliable before broadening the ecosystem.
 
 The project currently supports:
 

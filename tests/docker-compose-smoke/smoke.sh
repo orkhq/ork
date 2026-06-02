@@ -3,32 +3,32 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-ORCH_FILE="$SCRIPT_DIR/orch.yml"
+ORK_FILE="$SCRIPT_DIR/ork.yml"
 TMP_DIR="$(mktemp -d)"
-ORCH_BIN="$TMP_DIR/orch"
+ORK_BIN="$TMP_DIR/ork"
 
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
 
-ENV_ONE="${ORCH_SMOKE_ENV_ONE:-smoke-one}"
-ENV_TWO="${ORCH_SMOKE_ENV_TWO:-smoke-two}"
+ENV_ONE="${ORK_SMOKE_ENV_ONE:-smoke-one}"
+ENV_TWO="${ORK_SMOKE_ENV_TWO:-smoke-two}"
 COMPONENT="web"
 SERVICE="web"
 SERVICE_PORT="80"
 
 cleanup() {
   set +e
-  "$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_ONE" >/dev/null 2>&1
-  "$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_TWO" >/dev/null 2>&1
-  rm -rf "$REPO_ROOT/.orch/$ENV_ONE" "$REPO_ROOT/.orch/$ENV_TWO"
-  rm -rf "$SCRIPT_DIR/.workdir/orch/$ENV_ONE" "$SCRIPT_DIR/.workdir/orch/$ENV_TWO"
-  rmdir "$SCRIPT_DIR/.workdir/orch" "$SCRIPT_DIR/.workdir" >/dev/null 2>&1
+  "$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_ONE" >/dev/null 2>&1
+  "$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_TWO" >/dev/null 2>&1
+  rm -rf "$REPO_ROOT/.ork/$ENV_ONE" "$REPO_ROOT/.ork/$ENV_TWO"
+  rm -rf "$SCRIPT_DIR/.workdir/ork/$ENV_ONE" "$SCRIPT_DIR/.workdir/ork/$ENV_TWO"
+  rmdir "$SCRIPT_DIR/.workdir/ork" "$SCRIPT_DIR/.workdir" >/dev/null 2>&1
   rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT
 
 project_name() {
   local env_id="$1"
-  printf "orch_%s_%s" "$env_id" "$COMPONENT"
+  printf "ork_%s_%s" "$env_id" "$COMPONENT"
 }
 
 service_url() {
@@ -70,14 +70,14 @@ assert_project_removed() {
 
 cd "$REPO_ROOT"
 
-echo "Building orch CLI..."
-go build -o "$ORCH_BIN" ./cmd/orch
+echo "Building ork CLI..."
+go build -o "$ORK_BIN" ./cmd/ork
 
 echo "Starting $ENV_ONE..."
-"$ORCH_BIN" up --file "$ORCH_FILE" --env-id "$ENV_ONE"
+"$ORK_BIN" up --file "$ORK_FILE" --env-id "$ENV_ONE"
 
 echo "Starting $ENV_TWO..."
-"$ORCH_BIN" up --file "$ORCH_FILE" --env-id "$ENV_TWO"
+"$ORK_BIN" up --file "$ORK_FILE" --env-id "$ENV_TWO"
 
 URL_ONE="$(service_url "$ENV_ONE")"
 URL_TWO="$(service_url "$ENV_TWO")"
@@ -94,10 +94,10 @@ echo "Checking $ENV_TWO at $URL_TWO..."
 wait_until_reachable "$URL_TWO"
 
 echo "Tearing down $ENV_ONE..."
-"$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_ONE"
+"$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_ONE"
 
 echo "Tearing down $ENV_TWO..."
-"$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_TWO"
+"$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_TWO"
 
 assert_project_removed "$ENV_ONE"
 assert_project_removed "$ENV_TWO"

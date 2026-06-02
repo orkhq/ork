@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"orch/pkg/logging"
-	"orch/pkg/state"
+	"ork/pkg/logging"
+	"ork/pkg/state"
 )
 
 func TestNewLocalFromConfig(t *testing.T) {
@@ -16,8 +16,8 @@ func TestNewLocalFromConfig(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected nil error, got %v", err)
 		}
-		if backend.root != ".orch" {
-			t.Fatalf("expected default root .orch, got %q", backend.root)
+		if backend.root != ".ork" {
+			t.Fatalf("expected default root .ork, got %q", backend.root)
 		}
 	})
 

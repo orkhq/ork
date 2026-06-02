@@ -33,7 +33,7 @@ components:
     runner: local
     source:
       embedded: |
-        echo "token=abc" >> "$ORCH_OUTPUT_ENV"
+        echo "token=abc" >> "$ORK_OUTPUT_ENV"
 ```
 
 For `source.files`, map runner-side script names to local files:
@@ -74,8 +74,8 @@ Component `env` values are passed to the script. The adapter also sets:
 
 | Variable | Description |
 | --- | --- |
-| `ORCH_OUTPUT_ENV` | Relative path to the env-style output file. Defaults to `.orch-outputs.env`. |
-| `ORCH_OUTPUT_JSON` | Relative path to the JSON output file. Defaults to `.orch-outputs.json`. |
+| `ORK_OUTPUT_ENV` | Relative path to the env-style output file. Defaults to `.ork-outputs.env`. |
+| `ORK_OUTPUT_JSON` | Relative path to the JSON output file. Defaults to `.ork-outputs.json`. |
 
 ## Outputs
 
@@ -84,7 +84,7 @@ Script outputs must be declared in the component's `outputs` list unless they ar
 Environment file format:
 
 ```sh
-echo "name=value" >> "$ORCH_OUTPUT_ENV"
+echo "name=value" >> "$ORK_OUTPUT_ENV"
 ```
 
 Multiple `echo` calls are supported. If the same key is written more than once, the last value wins.
@@ -92,7 +92,7 @@ Multiple `echo` calls are supported. If the same key is written more than once, 
 JSON file format:
 
 ```sh
-cat > "$ORCH_OUTPUT_JSON" <<'JSON'
+cat > "$ORK_OUTPUT_JSON" <<'JSON'
 {
   "url": "http://localhost:8080",
   "enabled": true,
@@ -112,7 +112,7 @@ outputs:
   - name: url
 ```
 
-Sensitive outputs are available during the same `orch up`, but are not persisted in state.
+Sensitive outputs are available during the same `ork up`, but are not persisted in state.
 
 ## Apply Behavior
 
@@ -121,9 +121,9 @@ Apply does the following:
 1. Creates the component workdir on the runner.
 2. Copies script source to the runner.
 3. Copies `with` files to the runner workdir.
-4. Clears previous `.orch-outputs.env` and `.orch-outputs.json`.
+4. Clears previous `.ork-outputs.env` and `.ork-outputs.json`.
 5. Executes scripts sequentially.
-6. Copies output files back to Orch and parses outputs.
+6. Copies output files back to Ork and parses outputs.
 7. Stores script list, shell, and workdir in component state.
 
 ## Destroy Behavior

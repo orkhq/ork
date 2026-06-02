@@ -2,7 +2,7 @@ package manifestparsers
 
 import (
 	"gopkg.in/yaml.v3"
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 type V1Manifest struct {

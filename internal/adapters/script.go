@@ -12,11 +12,11 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	"orch/pkg/utils"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	"ork/pkg/utils"
 )
 
 type ScriptAdapter struct{}
@@ -96,14 +96,14 @@ func (d *ScriptAdapter) Apply(ctx context.Context, c *manifestcore.Component, t 
 		})
 	}
 
-	outputEnvPath := path.Join(workDir, ".orch-outputs.env")
-	outputJSONPath := path.Join(workDir, ".orch-outputs.json")
+	outputEnvPath := path.Join(workDir, ".ork-outputs.env")
+	outputJSONPath := path.Join(workDir, ".ork-outputs.json")
 	env := make(map[string]string, len(c.Env)+2)
 	for key, value := range c.Env {
 		env[key] = value
 	}
-	env["ORCH_OUTPUT_ENV"] = ".orch-outputs.env"
-	env["ORCH_OUTPUT_JSON"] = ".orch-outputs.json"
+	env["ORK_OUTPUT_ENV"] = ".ork-outputs.env"
+	env["ORK_OUTPUT_JSON"] = ".ork-outputs.json"
 
 	if err := d.clearOutputFiles(ctx, t, workDir, c.Runner, c.Name); err != nil {
 		return ComponentApplyResult{}, err
@@ -115,7 +115,7 @@ func (d *ScriptAdapter) Apply(ctx context.Context, c *manifestcore.Component, t 
 		}
 	}
 
-	localOutputDir := path.Join(aCtx.GetComponentWorkDirInOrchLocalWorkDir(c.Name), "script", "outputs")
+	localOutputDir := path.Join(aCtx.GetComponentWorkDirInOrkLocalWorkDir(c.Name), "script", "outputs")
 	outputs, err := d.captureOutputs(ctx, t, outputEnvPath, outputJSONPath, localOutputDir)
 	if err != nil {
 		return ComponentApplyResult{}, err
@@ -213,7 +213,7 @@ func (d *ScriptAdapter) execScript(ctx context.Context, t runners.Runner, cfg *S
 func (d *ScriptAdapter) clearOutputFiles(ctx context.Context, t runners.Runner, workDir string, runnerName string, componentName string) error {
 	res, err := t.Exec(ctx, runners.ExecCommand{
 		WorkingDir: workDir,
-		Command:    []string{"rm", "-f", ".orch-outputs.env", ".orch-outputs.json"},
+		Command:    []string{"rm", "-f", ".ork-outputs.env", ".ork-outputs.json"},
 		Timeout:    0,
 		Stderr:     utils.NewPrefixWriter(os.Stderr, utils.RunnerComponentPrefix(runnerName, componentName)),
 		Stdout:     utils.NewPrefixWriter(os.Stdout, utils.RunnerComponentPrefix(runnerName, componentName)),
@@ -233,7 +233,7 @@ func (d *ScriptAdapter) copyEmbeddedSource(ctx context.Context, c *manifestcore.
 		return nil, fmt.Errorf("failed to get adapter context")
 	}
 
-	dir := path.Join(aCtx.GetComponentWorkDirInOrchLocalWorkDir(c.Name), "script")
+	dir := path.Join(aCtx.GetComponentWorkDirInOrkLocalWorkDir(c.Name), "script")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create local script source directory: %w", err)
 	}
@@ -256,7 +256,7 @@ func (d *ScriptAdapter) captureOutputs(ctx context.Context, t runners.Runner, en
 	// such as permission errors or runner transport failures. Missing output
 	// files are valid because scripts may choose only one output format, but
 	// other copy failures should not be silently treated as empty outputs.
-	envData, err := copyRunnerFileToBytes(ctx, t, envPath, path.Join(localOutputDir, ".orch-outputs.env"))
+	envData, err := copyRunnerFileToBytes(ctx, t, envPath, path.Join(localOutputDir, ".ork-outputs.env"))
 	if err == nil && len(bytes.TrimSpace(envData)) > 0 {
 		parsed, err := parseOutputEnv(envData)
 		if err != nil {
@@ -267,7 +267,7 @@ func (d *ScriptAdapter) captureOutputs(ctx context.Context, t runners.Runner, en
 		}
 	}
 
-	jsonData, err := copyRunnerFileToBytes(ctx, t, jsonPath, path.Join(localOutputDir, ".orch-outputs.json"))
+	jsonData, err := copyRunnerFileToBytes(ctx, t, jsonPath, path.Join(localOutputDir, ".ork-outputs.json"))
 	if err == nil && len(bytes.TrimSpace(jsonData)) > 0 {
 		parsed, err := parseOutputJSON(jsonData)
 		if err != nil {

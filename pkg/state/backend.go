@@ -3,8 +3,8 @@ package state
 import "context"
 
 type Backend interface {
-	Load(ctx context.Context, envID string) (*OrchState, error)
-	Save(ctx context.Context, envID string, state *OrchState) error
+	Load(ctx context.Context, envID string) (*OrkState, error)
+	Save(ctx context.Context, envID string, state *OrkState) error
 	Exists(ctx context.Context, envID string) (bool, error)
 	Delete(ctx context.Context, envID string) error
 	SaveArtifact(ctx context.Context, envID string, componentName string, artifact Artifact, sourcePath string) error

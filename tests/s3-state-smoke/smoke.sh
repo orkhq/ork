@@ -4,15 +4,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TMP_DIR="$(mktemp -d)"
-ORCH_BIN="$TMP_DIR/orch"
-ORCH_FILE="$TMP_DIR/orch.yml"
+ORK_BIN="$TMP_DIR/ork"
+ORK_FILE="$TMP_DIR/ork.yml"
 
-ENV_ID="${ORCH_S3_STATE_SMOKE_ENV:-s3-state-smoke-one}"
-REGION="${ORCH_S3_STATE_SMOKE_REGION:-${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}}"
-BUCKET="${ORCH_S3_STATE_SMOKE_BUCKET:-}"
-PREFIX="${ORCH_S3_STATE_SMOKE_PREFIX:-orch-smoke/state}"
+ENV_ID="${ORK_S3_STATE_SMOKE_ENV:-s3-state-smoke-one}"
+REGION="${ORK_S3_STATE_SMOKE_REGION:-${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}}"
+BUCKET="${ORK_S3_STATE_SMOKE_BUCKET:-}"
+PREFIX="${ORK_S3_STATE_SMOKE_PREFIX:-ork-smoke/state}"
 COMPONENT="tf"
-WORK_DIR="$SCRIPT_DIR/.workdir/orch/$ENV_ID/$COMPONENT"
+WORK_DIR="$SCRIPT_DIR/.workdir/ork/$ENV_ID/$COMPONENT"
 STATE_KEY="$PREFIX/$ENV_ID/state.json"
 ARTIFACT_KEY="$PREFIX/$ENV_ID/artifacts/$COMPONENT/terraform.tfstate"
 
@@ -21,21 +21,21 @@ export AWS_DEFAULT_REGION="$REGION"
 
 cleanup() {
   set +e
-  "$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_ID" >/dev/null 2>&1
-  rm -rf "$SCRIPT_DIR/.workdir/orch/$ENV_ID"
-  rmdir "$SCRIPT_DIR/.workdir/orch" "$SCRIPT_DIR/.workdir" >/dev/null 2>&1
+  "$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_ID" >/dev/null 2>&1
+  rm -rf "$SCRIPT_DIR/.workdir/ork/$ENV_ID"
+  rmdir "$SCRIPT_DIR/.workdir/ork" "$SCRIPT_DIR/.workdir" >/dev/null 2>&1
   rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT
 
-if [[ "${ORCH_RUN_AWS_SMOKE:-}" != "1" ]]; then
+if [[ "${ORK_RUN_AWS_SMOKE:-}" != "1" ]]; then
   echo "Skipping S3 state backend smoke test."
-  echo "Set ORCH_RUN_AWS_SMOKE=1 and ORCH_S3_STATE_SMOKE_BUCKET=<bucket> to use a real S3 bucket."
+  echo "Set ORK_RUN_AWS_SMOKE=1 and ORK_S3_STATE_SMOKE_BUCKET=<bucket> to use a real S3 bucket."
   exit 0
 fi
 
 if [[ -z "$BUCKET" ]]; then
-  echo "ORCH_S3_STATE_SMOKE_BUCKET is required for the S3 state backend smoke test" >&2
+  echo "ORK_S3_STATE_SMOKE_BUCKET is required for the S3 state backend smoke test" >&2
   exit 1
 fi
 
@@ -49,15 +49,15 @@ if ! aws sts get-caller-identity --region "$REGION" >/dev/null; then
   exit 1
 fi
 
-cat > "$ORCH_FILE" <<YAML
-version: orch/1.0
+cat > "$ORK_FILE" <<YAML
+version: ork/1.0
 
 metadata:
   id: s3-state-smoke
   description: S3 state backend smoke test
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 state:
   backend: s3
@@ -84,17 +84,17 @@ components:
         }
 
         resource "terraform_data" "smoke" {
-          input = "orch s3 state smoke"
+          input = "ork s3 state smoke"
         }
 YAML
 
 cd "$REPO_ROOT"
 
-echo "Building orch CLI..."
-go build -o "$ORCH_BIN" ./cmd/orch
+echo "Building ork CLI..."
+go build -o "$ORK_BIN" ./cmd/ork
 
 echo "Starting $ENV_ID with S3 state backend s3://$BUCKET/$PREFIX..."
-"$ORCH_BIN" up --file "$ORCH_FILE" --env-id "$ENV_ID"
+"$ORK_BIN" up --file "$ORK_FILE" --env-id "$ENV_ID"
 
 if ! aws s3api head-object --bucket "$BUCKET" --key "$STATE_KEY" --region "$REGION" >/dev/null; then
   echo "Expected S3 state object s3://$BUCKET/$STATE_KEY to exist" >&2
@@ -115,7 +115,7 @@ echo "Removing runner workdir to verify S3 artifact restore..."
 rm -rf "$WORK_DIR"
 
 echo "Tearing down $ENV_ID..."
-"$ORCH_BIN" down --file "$ORCH_FILE" --env-id "$ENV_ID"
+"$ORK_BIN" down --file "$ORK_FILE" --env-id "$ENV_ID"
 
 if terraform -chdir="$WORK_DIR" state list | grep -q '^terraform_data.smoke$'; then
   echo "Expected terraform_data.smoke to be destroyed" >&2
@@ -124,7 +124,7 @@ fi
 
 STATE_JSON="$(aws s3 cp "s3://$BUCKET/$STATE_KEY" - --region "$REGION")"
 if ! grep -q '"status": "destroyed"' <<<"$STATE_JSON"; then
-  echo "Expected S3 Orch component state to be marked destroyed" >&2
+  echo "Expected S3 Ork component state to be marked destroyed" >&2
   exit 1
 fi
 

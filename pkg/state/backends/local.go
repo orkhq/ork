@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/go-viper/mapstructure/v2"
-	"orch/pkg/logging"
-	"orch/pkg/state"
+	"ork/pkg/logging"
+	"ork/pkg/state"
 )
 
 type LocalConfig struct {
@@ -40,12 +40,12 @@ func NewLocalFromConfig(config map[string]interface{}, logger logging.DebugLogge
 
 func NewLocal(root string, logger logging.DebugLogger) *Local {
 	if root == "" {
-		root = ".orch"
+		root = ".ork"
 	}
 	return &Local{root: root, logger: normalizeLogger(logger)}
 }
 
-func (b *Local) Load(ctx context.Context, envID string) (*state.OrchState, error) {
+func (b *Local) Load(ctx context.Context, envID string) (*state.OrkState, error) {
 	stateFile := b.stateFile(envID)
 	b.logger.Debug("loading local state", logging.Field{Key: "path", Value: stateFile})
 	data, err := os.ReadFile(stateFile)
@@ -56,15 +56,15 @@ func (b *Local) Load(ctx context.Context, envID string) (*state.OrchState, error
 		return nil, fmt.Errorf("failed to read state file: %w", err)
 	}
 
-	var orchState state.OrchState
-	if err := json.Unmarshal(data, &orchState); err != nil {
+	var orkState state.OrkState
+	if err := json.Unmarshal(data, &orkState); err != nil {
 		return nil, fmt.Errorf("failed to parse state file: %w", err)
 	}
 
-	return &orchState, nil
+	return &orkState, nil
 }
 
-func (b *Local) Save(ctx context.Context, envID string, orchState *state.OrchState) error {
+func (b *Local) Save(ctx context.Context, envID string, orkState *state.OrkState) error {
 	stateFile := b.stateFile(envID)
 	b.logger.Debug("saving local state", logging.Field{Key: "path", Value: stateFile})
 	stateDir := filepath.Dir(stateFile)
@@ -72,7 +72,7 @@ func (b *Local) Save(ctx context.Context, envID string, orchState *state.OrchSta
 		return fmt.Errorf("failed to create state directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(orchState, "", "  ")
+	data, err := json.MarshalIndent(orkState, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal state: %w", err)
 	}

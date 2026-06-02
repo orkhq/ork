@@ -6,14 +6,14 @@ description: Run a local script component and capture outputs.
 Use the script adapter when you need custom setup, checks, glue code, or simple automation.
 
 ```yaml
-version: orch/1.0
+version: ork/1.0
 
 metadata:
   id: script-example
   description: Local script environment
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 runners:
   local:
@@ -26,7 +26,7 @@ components:
     runner: local
     source:
       embedded: |
-        echo "message=hello from orch" >> "$ORCH_OUTPUT_ENV"
+        echo "message=hello from ork" >> "$ORK_OUTPUT_ENV"
     outputs:
       - name: message
 ```
@@ -34,17 +34,17 @@ components:
 Apply it:
 
 ```sh
-orch up --env-id script-demo
+ork up --env-id script-demo
 ```
 
 Inspect state:
 
 ```sh
-orch state inspect --env-id script-demo
+ork state inspect --env-id script-demo
 ```
 
 Destroy it:
 
 ```sh
-orch down --env-id script-demo
+ork down --env-id script-demo
 ```

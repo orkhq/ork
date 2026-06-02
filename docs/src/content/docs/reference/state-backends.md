@@ -1,11 +1,11 @@
 ---
 title: State Backends
-description: Configure where Orch stores environment state.
+description: Configure where Ork stores environment state.
 ---
 
-Orch uses one state backend per manifest.
+Ork uses one state backend per manifest.
 
-If `state` is omitted, Orch uses the local backend with `.orch` as the root.
+If `state` is omitted, Ork uses the local backend with `.ork` as the root.
 
 ## Local
 
@@ -13,14 +13,14 @@ If `state` is omitted, Orch uses the local backend with `.orch` as the root.
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 ```
 
 Config fields:
 
 | Field | Required | Default | Description |
 | --- | --- | --- | --- |
-| `path` | No | `.orch` | Local directory where environment state bundles are stored. |
+| `path` | No | `.ork` | Local directory where environment state bundles are stored. |
 
 Layout:
 
@@ -29,7 +29,7 @@ Layout:
 <root>/<env-id>/artifacts/<component-name>/<artifact-path>
 ```
 
-After a successful `down`, Orch removes `<root>/<env-id>`.
+After a successful `down`, Ork removes `<root>/<env-id>`.
 
 ## S3
 
@@ -37,11 +37,11 @@ After a successful `down`, Orch removes `<root>/<env-id>`.
 state:
   backend: s3
   config:
-    bucket: my-orch-state
+    bucket: my-ork-state
     prefix: previews
     region: eu-central-1
     server_side_encryption: aws:kms
-    kms_key_id: alias/orch
+    kms_key_id: alias/ork
 ```
 
 Config fields:
@@ -63,7 +63,7 @@ s3://<bucket>/<prefix>/<env-id>/artifacts/<component-name>/<artifact-path>
 
 The S3 backend uses ambient AWS authentication through the AWS SDK default config chain.
 
-After a successful `down`, Orch deletes objects under `<prefix>/<env-id>/`.
+After a successful `down`, Ork deletes objects under `<prefix>/<env-id>/`.
 
 ## Locking
 

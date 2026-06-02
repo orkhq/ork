@@ -11,14 +11,14 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
-	manifestcore "orch/pkg/manifest/core"
+	manifestcore "ork/pkg/manifest/core"
 )
 
 func TestBuildSSHExecutionHidesEnvAndCommandFromRemoteCommand(t *testing.T) {
 	command, script := buildSSHExecution(
 		map[string]string{"BASE": "from-base", "OVERRIDE": "base"},
 		ExecCommand{
-			WorkingDir: "/tmp/orch app",
+			WorkingDir: "/tmp/ork app",
 			Command:    []string{"sh", "-c", "printf '%s' \"$TOKEN\""},
 			Env: map[string]string{
 				"OVERRIDE": "request",
@@ -41,7 +41,7 @@ func TestBuildSSHExecutionHidesEnvAndCommandFromRemoteCommand(t *testing.T) {
 		"export 'BASE=from-base'",
 		"export 'OVERRIDE=request'",
 		"export 'TOKEN=abc 123'",
-		"cd '/tmp/orch app'",
+		"cd '/tmp/ork app'",
 		"exec 'sh' '-c' 'printf '\\''%s'\\'' \"$TOKEN\"'",
 	} {
 		if !strings.Contains(script, want) {

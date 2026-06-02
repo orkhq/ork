@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
-	"orch/pkg/events"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	"orch/pkg/utils"
+	"ork/pkg/events"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	"ork/pkg/utils"
 )
 
 type CloudFormationAdapter struct{}
@@ -61,7 +61,7 @@ func (d *CloudFormationAdapter) ValidateAndLoadConfig(ctx context.Context, c *ma
 	}
 
 	if cfg.StackName == "" {
-		cfg.StackName = fmt.Sprintf("orch-%s-%s", aCtx.EnvID(), c.Name)
+		cfg.StackName = fmt.Sprintf("ork-%s-%s", aCtx.EnvID(), c.Name)
 	}
 
 	templatePath, err := d.localTemplatePath(aCtx, c)
@@ -161,7 +161,7 @@ func (d *CloudFormationAdapter) Destroy(ctx context.Context, componentState stat
 
 func (d *CloudFormationAdapter) localTemplatePath(aCtx AdapterContext, c *manifestcore.Component) (string, error) {
 	if c.Source.Embedded != "" {
-		dir := path.Join(aCtx.GetComponentWorkDirInOrchLocalWorkDir(c.Name), "cloudformation")
+		dir := path.Join(aCtx.GetComponentWorkDirInOrkLocalWorkDir(c.Name), "cloudformation")
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return "", fmt.Errorf("failed to create local CloudFormation template directory: %w", err)
 		}

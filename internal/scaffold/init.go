@@ -11,7 +11,7 @@ import (
 	"unicode"
 )
 
-//go:embed templates/starter.orch.yaml
+//go:embed templates/starter.ork.yaml
 var templatesFS embed.FS
 
 type InitOptions struct {
@@ -22,7 +22,7 @@ type InitOptions struct {
 
 func RunInit(options InitOptions) error {
 	if options.Path == "" {
-		options.Path = "orch.yaml"
+		options.Path = "ork.yaml"
 	}
 	if options.ID == "" {
 		options.ID = inferManifestID()
@@ -62,7 +62,7 @@ func normalizeInitPath(path string) string {
 func inferManifestID() string {
 	wd, err := os.Getwd()
 	if err != nil {
-		return "orch-demo"
+		return "ork-demo"
 	}
 	return sanitizeManifestID(filepath.Base(wd))
 }
@@ -84,18 +84,18 @@ func sanitizeManifestID(value string) string {
 	}
 	result := strings.Trim(out.String(), "-")
 	if result == "" {
-		return "orch-demo"
+		return "ork-demo"
 	}
 	return result
 }
 
 func starterManifest(id string) ([]byte, error) {
-	data, err := templatesFS.ReadFile("templates/starter.orch.yaml")
+	data, err := templatesFS.ReadFile("templates/starter.ork.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read starter manifest template: %w", err)
 	}
 
-	tmpl, err := template.New("starter.orch.yaml").Parse(string(data))
+	tmpl, err := template.New("starter.ork.yaml").Parse(string(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse starter manifest template: %w", err)
 	}

@@ -1,16 +1,16 @@
 #!/bin/sh
 set -eu
 
-repo="tryorch/orch"
-version="${ORCH_VERSION:-latest}"
-install_dir="${ORCH_INSTALL_DIR:-}"
+repo="tryork/ork"
+version="${ORK_VERSION:-latest}"
+install_dir="${ORK_INSTALL_DIR:-}"
 
 say() {
   printf '%s\n' "$*"
 }
 
 fail() {
-  say "orch install: $*" >&2
+  say "ork install: $*" >&2
   exit 1
 }
 
@@ -98,16 +98,16 @@ if [ "$version" = "latest" ]; then
   version="$(latest_version)"
 fi
 
-asset="orch_${version}_${suffix}.tar.gz"
+asset="ork_${version}_${suffix}.tar.gz"
 base_url="https://github.com/$repo/releases/download/$version"
 archive_url="$base_url/$asset"
 checksums_url="$base_url/checksums.txt"
 target_dir="$(default_install_dir)"
 
-tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t orch-install)"
+tmp_dir="$(mktemp -d 2>/dev/null || mktemp -d -t ork-install)"
 trap 'rm -rf "$tmp_dir"' EXIT INT TERM
 
-say "Installing orch $version for $suffix"
+say "Installing ork $version for $suffix"
 say "Downloading $archive_url"
 curl -fsSL "$archive_url" -o "$tmp_dir/$asset"
 
@@ -118,16 +118,16 @@ else
 fi
 
 tar -xzf "$tmp_dir/$asset" -C "$tmp_dir"
-binary="$(find "$tmp_dir" -type f -name orch -perm -u+x | head -n 1)"
-[ -n "$binary" ] || fail "release archive did not contain an executable orch binary"
+binary="$(find "$tmp_dir" -type f -name ork -perm -u+x | head -n 1)"
+[ -n "$binary" ] || fail "release archive did not contain an executable ork binary"
 
 mkdir -p "$target_dir"
-[ -w "$target_dir" ] || fail "$target_dir is not writable; set ORCH_INSTALL_DIR to a writable directory"
+[ -w "$target_dir" ] || fail "$target_dir is not writable; set ORK_INSTALL_DIR to a writable directory"
 
-cp "$binary" "$target_dir/orch"
-chmod 0755 "$target_dir/orch"
+cp "$binary" "$target_dir/ork"
+chmod 0755 "$target_dir/ork"
 
-say "orch installed to $target_dir/orch"
-if ! command -v orch >/dev/null 2>&1; then
-  say "Add $target_dir to PATH to run orch from any shell."
+say "ork installed to $target_dir/ork"
+if ! command -v ork >/dev/null 2>&1; then
+  say "Add $target_dir to PATH to run ork from any shell."
 fi

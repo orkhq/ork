@@ -6,14 +6,14 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'Orch',
+			title: 'Ork',
 			description:
 				'Ephemeral environment orchestration for preview, test, and development sandboxes.',
 			customCss: ['./src/styles/custom.css'],
 			logo: {
 				src: './src/assets/logo.svg',
 			},
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/tryorch/orch' }],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/tryork/ork' }],
 			sidebar: [
 				{
 					label: 'Getting Started',

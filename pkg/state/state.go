@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"orch/pkg/logging"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
+	"ork/pkg/logging"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
 )
 
 type Status string
@@ -88,8 +88,8 @@ type ComponentState struct {
 	Env                map[string]string            `json:"-"`
 }
 
-// OrchState represents the state of an entire orch environment
-type OrchState struct {
+// OrkState represents the state of an entire ork environment
+type OrkState struct {
 	EnvID      string           `json:"env_id"`
 	ManifestID string           `json:"manifest_id"`
 	Components []ComponentState `json:"components"`
@@ -99,7 +99,7 @@ type OrchState struct {
 	logger logging.DebugLogger
 }
 
-// Manager handles persistence of orch state
+// Manager handles persistence of ork state
 type Manager struct {
 	envID   string
 	backend Backend
@@ -109,9 +109,9 @@ func NewManager(envID string, backend Backend) *Manager {
 	return &Manager{envID: envID, backend: backend}
 }
 
-func New(envID, manifestID string, logger logging.DebugLogger) *OrchState {
+func New(envID, manifestID string, logger logging.DebugLogger) *OrkState {
 	now := time.Now().UTC().Format(time.RFC3339)
-	return &OrchState{
+	return &OrkState{
 		EnvID:      envID,
 		ManifestID: manifestID,
 		Components: make([]ComponentState, 0),
@@ -121,7 +121,7 @@ func New(envID, manifestID string, logger logging.DebugLogger) *OrchState {
 	}
 }
 
-func (sm *Manager) LoadOrNew(manifestID string, logger logging.DebugLogger) (*OrchState, error) {
+func (sm *Manager) LoadOrNew(manifestID string, logger logging.DebugLogger) (*OrkState, error) {
 	exists, err := sm.Exists(context.Background())
 	if err != nil {
 		return nil, err
@@ -138,12 +138,12 @@ func (sm *Manager) LoadOrNew(manifestID string, logger logging.DebugLogger) (*Or
 	return nil, err
 }
 
-// Load reads the state file and returns the orch state
-func (sm *Manager) Load() (*OrchState, error) {
+// Load reads the state file and returns the ork state
+func (sm *Manager) Load() (*OrkState, error) {
 	return sm.backend.Load(context.Background(), sm.envID)
 }
 
-func (s *OrchState) UpsertComponent(component ComponentState) {
+func (s *OrkState) UpsertComponent(component ComponentState) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	component.UpdatedAt = now
 
@@ -165,7 +165,7 @@ func (s *OrchState) UpsertComponent(component ComponentState) {
 	s.UpdatedAt = now
 }
 
-func (s *OrchState) FindComponent(name string) (ComponentState, bool) {
+func (s *OrkState) FindComponent(name string) (ComponentState, bool) {
 	for _, component := range s.Components {
 		if component.Name == name {
 			return component, true
@@ -174,7 +174,7 @@ func (s *OrchState) FindComponent(name string) (ComponentState, bool) {
 	return ComponentState{}, false
 }
 
-func (s *OrchState) BeginComponentApply(component *manifestcore.Component, runnerType runners.RunnerType, workDir string, stage Stage) {
+func (s *OrkState) BeginComponentApply(component *manifestcore.Component, runnerType runners.RunnerType, workDir string, stage Stage) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	for i := range s.Components {
 		if s.Components[i].Name == component.Name {
@@ -217,27 +217,27 @@ func (s *OrchState) BeginComponentApply(component *manifestcore.Component, runne
 	s.UpdatedAt = now
 }
 
-func (s *OrchState) MarkComponentFailed(name string, stage Stage) {
+func (s *OrkState) MarkComponentFailed(name string, stage Stage) {
 	s.markComponentStatus(name, StatusFailed, stage)
 }
 
-func (s *OrchState) MarkComponentApplying(name string, stage Stage) {
+func (s *OrkState) MarkComponentApplying(name string, stage Stage) {
 	s.markComponentStatus(name, StatusApplying, stage)
 }
 
-func (s *OrchState) MarkComponentApplied(name string, stage Stage) {
+func (s *OrkState) MarkComponentApplied(name string, stage Stage) {
 	s.markComponentStatus(name, StatusApplied, stage)
 }
 
-func (s *OrchState) MarkComponentDestroying(name string, stage Stage) {
+func (s *OrkState) MarkComponentDestroying(name string, stage Stage) {
 	s.markComponentStatus(name, StatusDestroying, stage)
 }
 
-func (s *OrchState) MarkComponentDestroyed(name string, stage Stage) {
+func (s *OrkState) MarkComponentDestroyed(name string, stage Stage) {
 	s.markComponentStatus(name, StatusDestroyed, stage)
 }
 
-func (s *OrchState) markComponentStatus(name string, status Status, stage Stage) {
+func (s *OrkState) markComponentStatus(name string, status Status, stage Stage) {
 	logger := s.logger
 	if logger == nil {
 		logger = &logging.NoopDebugLogger{}
@@ -260,8 +260,8 @@ func (s *OrchState) markComponentStatus(name string, status Status, stage Stage)
 	}
 }
 
-// Save writes the orch state to the state file
-func (sm *Manager) Save(state *OrchState) error {
+// Save writes the ork state to the state file
+func (sm *Manager) Save(state *OrkState) error {
 	return sm.backend.Save(context.Background(), sm.envID, state)
 }
 

@@ -1,6 +1,6 @@
 package orchestration
 
-import "orch/pkg/varresolvers"
+import "ork/pkg/varresolvers"
 
 func shellCommandResolver(resolvers ...varresolvers.Resolver) varresolvers.Resolver {
 	// Omit EnvResolver for command strings so environment values are not eagerly

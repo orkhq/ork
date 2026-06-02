@@ -3,16 +3,16 @@ title: State
 description: Manifest state backend configuration.
 ---
 
-`state` configures where Orch stores component state and artifacts.
+`state` configures where Ork stores component state and artifacts.
 
 ```yaml
 state:
   backend: local
   config:
-    path: .orch
+    path: .ork
 ```
 
-If `state` is omitted, Orch uses the local backend.
+If `state` is omitted, Ork uses the local backend.
 
 | Field | Required | Default | Description |
 | --- | --- | --- | --- |

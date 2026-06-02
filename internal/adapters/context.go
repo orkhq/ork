@@ -4,8 +4,8 @@ import (
 	"context"
 	"path"
 
-	"orch/pkg/events"
-	"orch/pkg/logging"
+	"ork/pkg/events"
+	"ork/pkg/logging"
 )
 
 const AdapterContextKey = "__adapter.context"
@@ -16,8 +16,8 @@ type AdapterContext struct {
 	emitter events.Emitter
 }
 
-func (a AdapterContext) GetComponentWorkDirInOrchLocalWorkDir(c string) string {
-	return path.Join(".orch", a.envID, c)
+func (a AdapterContext) GetComponentWorkDirInOrkLocalWorkDir(c string) string {
+	return path.Join(".ork", a.envID, c)
 }
 
 func (a AdapterContext) EnvID() string {
@@ -25,7 +25,7 @@ func (a AdapterContext) EnvID() string {
 }
 
 func (a AdapterContext) BuildRunnerWorkDir(baseWorkDir, componentName string) string {
-	return path.Join(baseWorkDir, "orch", a.envID, componentName)
+	return path.Join(baseWorkDir, "ork", a.envID, componentName)
 }
 
 func NewAdapterContext(id string, logger logging.DebugLogger, emitter events.Emitter) AdapterContext {

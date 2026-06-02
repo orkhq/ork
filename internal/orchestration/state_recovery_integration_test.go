@@ -8,21 +8,21 @@ import (
 	"strings"
 	"testing"
 
-	"orch/internal/adapters"
-	"orch/pkg/events"
-	"orch/pkg/logging"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/runners"
-	"orch/pkg/state"
-	statebackends "orch/pkg/state/backends"
+	"ork/internal/adapters"
+	"ork/pkg/events"
+	"ork/pkg/logging"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/runners"
+	"ork/pkg/state"
+	statebackends "ork/pkg/state/backends"
 )
 
 type testLogger struct{}
 
 func TestMain(m *testing.M) {
-	_ = os.RemoveAll(".orch")
+	_ = os.RemoveAll(".ork")
 	code := m.Run()
-	_ = os.RemoveAll(".orch")
+	_ = os.RemoveAll(".ork")
 	os.Exit(code)
 }
 
@@ -139,7 +139,7 @@ func TestRunUpSensitiveOutputFeedsSameRunButIsNotPersisted(t *testing.T) {
 			Runner:  "local",
 			WorkDir: workRoot,
 			Source: manifestcore.ComponentSource{
-				Embedded: `echo "token=abc" >> "$ORCH_OUTPUT_ENV"` + "\n",
+				Embedded: `echo "token=abc" >> "$ORK_OUTPUT_ENV"` + "\n",
 			},
 			Outputs: []manifestcore.Output{
 				{Name: "token", Sensitive: true},
@@ -192,7 +192,7 @@ func TestRunUpBlocksOnFailedDestroyStage(t *testing.T) {
 		Name:    "setup",
 		Type:    "script",
 		Runner:  state.RunnerRef{Name: "local", Type: runners.RunnerTypeLocal},
-		WorkDir: filepath.Join(workRoot, "orch", envID, "setup"),
+		WorkDir: filepath.Join(workRoot, "ork", envID, "setup"),
 		Status:  state.StatusFailed,
 		Stage:   state.StageDestroy,
 	})
@@ -339,7 +339,7 @@ func loadComponentState(t *testing.T, stateRoot string, envID string, componentN
 	return componentState
 }
 
-func saveState(t *testing.T, stateRoot string, envID string, current *state.OrchState) {
+func saveState(t *testing.T, stateRoot string, envID string, current *state.OrkState) {
 	t.Helper()
 	backend := statebackends.NewLocal(stateRoot, &logging.NoopDebugLogger{})
 	manager := state.NewManager(envID, backend)

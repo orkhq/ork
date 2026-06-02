@@ -1,14 +1,14 @@
 ---
 title: Quickstart
-description: Run a local script component with Orch.
+description: Run a local script component with Ork.
 ---
 
 This quickstart runs a local script component, captures an output, inspects state, and tears the environment down.
 
-## Install Orch
+## Install Ork
 
 ```sh
-curl -fsSL https://tryorch.dev/install | sh
+curl -fsSL https://tryork.dev/install | sh
 ```
 
 ## Create A Manifest
@@ -16,21 +16,21 @@ curl -fsSL https://tryorch.dev/install | sh
 Generate a starter manifest:
 
 ```sh
-orch init --id hello
+ork init --id hello
 ```
 
-Or create `orch.yaml` manually:
+Or create `ork.yaml` manually:
 
 
 ```yaml
-version: orch/1.0
+version: ork/1.0
 
 metadata:
   id: hello
   description: Local script example
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 runners:
   local:
@@ -43,7 +43,7 @@ components:
     runner: local
     source:
       embedded: |
-        echo "message=hello from orch" >> "$ORCH_OUTPUT_ENV"
+        echo "message=hello from ork" >> "$ORK_OUTPUT_ENV"
     outputs:
       - name: message
 ```
@@ -51,15 +51,15 @@ components:
 ## Apply
 
 ```sh
-orch up --env-id demo
+ork up --env-id demo
 ```
 
-Orch applies the component and writes state under `.orch/demo` by default.
+Ork applies the component and writes state under `.ork/demo` by default.
 
 ## Inspect
 
 ```sh
-orch state inspect --env-id demo
+ork state inspect --env-id demo
 ```
 
 The default table output shows component status, stage, type, runner, and timestamps. It intentionally does not print outputs, payloads, or artifact contents.
@@ -67,7 +67,7 @@ The default table output shows component status, stage, type, runner, and timest
 ## Destroy
 
 ```sh
-orch down --env-id demo
+ork down --env-id demo
 ```
 
-After a successful destroy, Orch deletes the whole environment state bundle, including artifacts.
+After a successful destroy, Ork deletes the whole environment state bundle, including artifacts.

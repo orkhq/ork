@@ -7,10 +7,10 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"orch/pkg/logging"
-	manifestcore "orch/pkg/manifest/core"
-	"orch/pkg/state"
-	statebackends "orch/pkg/state/backends"
+	"ork/pkg/logging"
+	manifestcore "ork/pkg/manifest/core"
+	"ork/pkg/state"
+	statebackends "ork/pkg/state/backends"
 )
 
 type StateInspectOptions struct {
@@ -44,7 +44,7 @@ func RunStateInspect(envID string, m *manifestcore.Manifest, logger logging.Logg
 	}
 }
 
-func renderStateInspectJSON(writer io.Writer, currentState *state.OrchState) error {
+func renderStateInspectJSON(writer io.Writer, currentState *state.OrkState) error {
 	data, err := json.MarshalIndent(currentState, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal state: %w", err)
@@ -53,7 +53,7 @@ func renderStateInspectJSON(writer io.Writer, currentState *state.OrchState) err
 	return err
 }
 
-func renderStateInspectTable(writer io.Writer, currentState *state.OrchState) error {
+func renderStateInspectTable(writer io.Writer, currentState *state.OrkState) error {
 	_, _ = fmt.Fprintf(writer, "Environment: %s\n", currentState.EnvID)
 	_, _ = fmt.Fprintf(writer, "Manifest:    %s\n", currentState.ManifestID)
 	_, _ = fmt.Fprintf(writer, "Updated:     %s\n\n", currentState.UpdatedAt)
@@ -93,15 +93,15 @@ func recoveryHints(components []state.ComponentState) []string {
 	for _, component := range components {
 		switch component.Status {
 		case state.StatusDestroying:
-			hints = append(hints, fmt.Sprintf("%s was interrupted during destroy; run `orch down -e <env-id>` to retry cleanup.", component.Name))
+			hints = append(hints, fmt.Sprintf("%s was interrupted during destroy; run `ork down -e <env-id>` to retry cleanup.", component.Name))
 		case state.StatusFailed:
 			if component.Stage.IsDestroyStage() {
-				hints = append(hints, fmt.Sprintf("%s failed during %s; run `orch down -e <env-id>` to retry cleanup.", component.Name, component.Stage))
+				hints = append(hints, fmt.Sprintf("%s failed during %s; run `ork down -e <env-id>` to retry cleanup.", component.Name, component.Stage))
 			} else {
-				hints = append(hints, fmt.Sprintf("%s failed during %s; run `orch up -e <env-id>` to retry or `orch down -e <env-id>` to clean up.", component.Name, component.Stage))
+				hints = append(hints, fmt.Sprintf("%s failed during %s; run `ork up -e <env-id>` to retry or `ork down -e <env-id>` to clean up.", component.Name, component.Stage))
 			}
 		case state.StatusApplying:
-			hints = append(hints, fmt.Sprintf("%s was interrupted during %s; run `orch up -e <env-id>` to retry or `orch down -e <env-id>` to clean up.", component.Name, component.Stage))
+			hints = append(hints, fmt.Sprintf("%s was interrupted during %s; run `ork up -e <env-id>` to retry or `ork down -e <env-id>` to clean up.", component.Name, component.Stage))
 		}
 	}
 	return hints

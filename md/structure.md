@@ -1,6 +1,6 @@
-orch/
+ork/
 ├── cmd/
-│ ├── orch/ # CLI binary (agent)
+│ ├── ork/ # CLI binary (agent)
 │ │ ├── main.go
 │ │ └── commands/
 │ │ ├── up.go
@@ -58,7 +58,7 @@ orch/
 │ │ ├── routes.go
 │ │ ├── middleware.go
 │ │ ├── models.go
-│ │ └── client.go # orch client SDK
+│ │ └── client.go # ork client SDK
 │ │
 │ ├── utils/ # Shared helpers
 │ │ ├── logging.go
@@ -90,7 +90,7 @@ orch/
 │ │ └── full_integration.yaml
 │ │
 │ └── integration/
-│ ├── orch_up_down_test.go
+│ ├── ork_up_down_test.go
 │ ├── terraform_adapter_test.go
 │ └── docker_compose_test.go
 │
@@ -100,18 +100,18 @@ orch/
 
 ## State persistence decisions
 
-Orch owns one environment state document per environment ID. The default local backend stores it at:
+Ork owns one environment state document per environment ID. The default local backend stores it at:
 
 ```text
-.orch/<env-id>/state.json
+.ork/<env-id>/state.json
 ```
 
-State storage is pluggable through `pkg/state.Backend`. The interface stays in `pkg/state` because it depends on core state types such as `OrchState` and `Artifact`. Backend implementations live under `pkg/state/backends` with package name `statebackends`. This avoids a Go import cycle: backend implementations can import `pkg/state`, while `pkg/state` does not import its implementations.
+State storage is pluggable through `pkg/state.Backend`. The interface stays in `pkg/state` because it depends on core state types such as `OrkState` and `Artifact`. Backend implementations live under `pkg/state/backends` with package name `statebackends`. This avoids a Go import cycle: backend implementations can import `pkg/state`, while `pkg/state` does not import its implementations.
 
 Current wiring uses the local backend explicitly:
 
 ```go
-state.NewManager(envID, statebackends.NewLocal(".orch"))
+state.NewManager(envID, statebackends.NewLocal(".ork"))
 ```
 
 Adapters return `ComponentStateData` after apply. This contains the component workdir, adapter payload, and any tool-state artifacts that must be preserved for teardown. The rule for artifacts is intentionally narrow:
@@ -130,7 +130,7 @@ terraform.tfstate.backup
 .terraform.lock.hcl
 ```
 
-During `up`, Orch saves the Orch state document and then captures declared artifacts from the runner into the configured state backend. During `down`, Orch restores artifacts to the runner before calling the adapter destroy path.
+During `up`, Ork saves the Ork state document and then captures declared artifacts from the runner into the configured state backend. During `down`, Ork restores artifacts to the runner before calling the adapter destroy path.
 
 Artifact capture currently uses temporary files as a bridge. The runner API copies files to and from filesystem paths, and the backend API also saves/restores from filesystem paths. We cannot assume direct runner-to-backend streaming, especially for future remote/object-store backends, so the flow is:
 

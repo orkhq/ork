@@ -9,5 +9,5 @@ var (
 )
 
 func String() string {
-	return fmt.Sprintf("Orch %s (commit: %s, built: %s)", Version, Commit, BuildDate)
+	return fmt.Sprintf("Ork %s (commit: %s, built: %s)", Version, Commit, BuildDate)
 }

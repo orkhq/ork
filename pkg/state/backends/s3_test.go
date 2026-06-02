@@ -7,13 +7,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"orch/pkg/logging"
-	"orch/pkg/state"
+	"ork/pkg/logging"
+	"ork/pkg/state"
 )
 
 func TestDecodeS3Config(t *testing.T) {
 	t.Run("requires bucket", func(t *testing.T) {
-		_, err := decodeS3Config(map[string]interface{}{"prefix": "orch"})
+		_, err := decodeS3Config(map[string]interface{}{"prefix": "ork"})
 		if err == nil {
 			t.Fatal("expected error for missing bucket")
 		}
@@ -21,7 +21,7 @@ func TestDecodeS3Config(t *testing.T) {
 
 	t.Run("rejects unknown config", func(t *testing.T) {
 		_, err := decodeS3Config(map[string]interface{}{
-			"bucket": "orch-state",
+			"bucket": "ork-state",
 			"path":   "not-for-s3",
 		})
 		if err == nil {
@@ -31,10 +31,10 @@ func TestDecodeS3Config(t *testing.T) {
 
 	t.Run("accepts encryption config", func(t *testing.T) {
 		cfg, err := decodeS3Config(map[string]interface{}{
-			"bucket":                 "orch-state",
+			"bucket":                 "ork-state",
 			"prefix":                 "previews/",
 			"server_side_encryption": string(types.ServerSideEncryptionAwsKms),
-			"kms_key_id":             "alias/orch",
+			"kms_key_id":             "alias/ork",
 		})
 		if err != nil {
 			t.Fatalf("expected nil error, got %v", err)
@@ -46,9 +46,9 @@ func TestDecodeS3Config(t *testing.T) {
 
 	t.Run("kms key requires kms encryption", func(t *testing.T) {
 		_, err := decodeS3Config(map[string]interface{}{
-			"bucket":                 "orch-state",
+			"bucket":                 "ork-state",
 			"server_side_encryption": string(types.ServerSideEncryptionAes256),
-			"kms_key_id":             "alias/orch",
+			"kms_key_id":             "alias/ork",
 		})
 		if err == nil {
 			t.Fatal("expected error for kms key without aws:kms encryption")
@@ -58,7 +58,7 @@ func TestDecodeS3Config(t *testing.T) {
 
 func TestS3KeyLayout(t *testing.T) {
 	backend := NewS3(nil, S3Config{
-		Bucket: "orch-state",
+		Bucket: "ork-state",
 		Prefix: "/previews/",
 	}, &logging.NoopDebugLogger{})
 
@@ -87,7 +87,7 @@ func TestS3DeleteRemovesEnvironmentPrefix(t *testing.T) {
 		},
 	}
 	backend := NewS3(client, S3Config{
-		Bucket: "orch-state",
+		Bucket: "ork-state",
 		Prefix: "previews",
 	}, &logging.NoopDebugLogger{})
 

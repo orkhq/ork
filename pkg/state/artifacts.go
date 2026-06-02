@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"orch/pkg/runners"
+	"ork/pkg/runners"
 )
 
 func (sm *Manager) CaptureArtifacts(ctx context.Context, component ComponentState, runner runners.Runner) error {
@@ -110,7 +110,7 @@ func tempArtifactFile() (string, func(), error) {
 	// The current runner and backend APIs both speak in filesystem paths, not
 	// streams. A temp file is the bridge between "copy from runner" and "save to
 	// backend" until we can guarantee direct runner-to-backend streaming.
-	file, err := os.CreateTemp("", "orch-artifact-*")
+	file, err := os.CreateTemp("", "ork-artifact-*")
 	if err != nil {
 		return "", func() {}, fmt.Errorf("failed to create temporary artifact file: %w", err)
 	}

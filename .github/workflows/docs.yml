@@ -8,7 +8,7 @@ permissions:
 
 env:
   NODE_VERSION: "22.12.0"
-  CLOUDFLARE_PAGES_PROJECT_NAME: orch-docs
+  CLOUDFLARE_PAGES_PROJECT_NAME: ork-docs
 
 jobs:
   build-and-deploy:

@@ -1,6 +1,6 @@
 # Open source readiness plan
 
-This is the working plan for getting Orch ready for outside contributors and early users. The goal is to keep the project moving without losing the thread on safety, recovery, and trust.
+This is the working plan for getting Ork ready for outside contributors and early users. The goal is to keep the project moving without losing the thread on safety, recovery, and trust.
 
 ## 1. State and recovery semantics
 
@@ -8,7 +8,7 @@ This is the first priority.
 
 Decisions to settle and document:
 
-- what `orch up` does when state already exists
+- what `ork up` does when state already exists
 - how partial apply failures are represented
 - how interrupted `up` and `down` runs are recovered
 - which statuses block, retry, skip, or destroy
@@ -22,13 +22,13 @@ Current direction:
 - `failed` and `applying` components are retried by `up`
 - `failed` in destroy-side stages and `destroying` block `up`; run `down` again to finish cleanup
 - components persist both `status` and lifecycle `stage`
-- `orch up --reapply` reruns already-applied components through the normal apply flow
+- `ork up --reapply` reruns already-applied components through the normal apply flow
 - sensitive outputs are not stored in state and fail clearly when referenced from skipped components
 - state is written before risky apply/destroy phases where possible
 
 Open questions:
 
-- whether to add a first `orch state inspect` command before more backend work
+- whether to add a first `ork state inspect` command before more backend work
 - how much state repair should be manual versus command-assisted
 
 ## 2. Security posture
@@ -47,12 +47,12 @@ Needed:
 
 State and artifact security action points:
 
-- document that Orch state is operational state, not a secret store
+- document that Ork state is operational state, not a secret store
 - document that state backends and artifacts should be treated as sensitive infrastructure data
 - keep default `state inspect` table output free of outputs, payloads, and artifacts
 - audit adapter payloads so secrets are not persisted accidentally
 - ensure tool-state artifacts such as Terraform state are handled as sensitive even when required for teardown
-- document that local `.orch` should remain ignored and object-store backends should be private and encrypted
+- document that local `.ork` should remain ignored and object-store backends should be private and encrypted
 - document that sensitive outputs are process-local until a secrets backend exists
 - document that teardown should prefer ambient auth plus stable identifiers, not application secrets
 - fail clearly when destroy hooks or later runs reference unavailable sensitive outputs
@@ -60,10 +60,10 @@ State and artifact security action points:
 
 Teardown and manifest dependency:
 
-- current `down` still requires the manifest so Orch can configure the state backend and runner topology
+- current `down` still requires the manifest so Ork can configure the state backend and runner topology
 - reliable teardown should not require secret material embedded in that manifest
 - ambient-auth checks are runner-owned for now; adapters should not grow their own credential detector unless component/provider config starts explicitly carrying credentials
-- future Orch Cloud should keep enough runtime/environment metadata to run teardown from persisted state without needing the original manifest checkout
+- future Ork Cloud should keep enough runtime/environment metadata to run teardown from persisted state without needing the original manifest checkout
 - in that future model, teardown uses persisted state plus cloud/runtime runner identity, not apply-time manifest secrets
 
 SSH host key verification action points:
@@ -78,13 +78,13 @@ SSH host key verification action points:
 
 Command/env secrecy action points:
 
-- define the policy: Orch does not log command invocations or env values by default
+- define the policy: Ork does not log command invocations or env values by default
 - audit runner, adapter, hook, script, event, debug, and error paths for command/env leakage
 - keep events generic, such as `hook started`, without interpolated command text
 - avoid including raw command strings or env maps in errors
 - replace SSH inline env with a stdin shell wrapper so env values are not placed in remote process args
 - prefer passing secrets through env over direct command interpolation in docs and examples
-- do not use the environment resolver for shell command interpolation; shell commands should only interpolate explicit Orch inputs and component outputs, leaving normal `$ENV_VAR` expansion to the shell on the runner
+- do not use the environment resolver for shell command interpolation; shell commands should only interpolate explicit Ork inputs and component outputs, leaving normal `$ENV_VAR` expansion to the shell on the runner
 - add tests proving SSH command strings do not contain env values and hook events do not include command contents
 
 ## 3. Adapter contract
@@ -134,7 +134,7 @@ Needed:
 - clear recovery hints after failures
 - useful `--debug`
 - CI-friendly output
-- `orch version`
+- `ork version`
 - install/build docs
 - license
 - contributing guide

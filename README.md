@@ -1,12 +1,12 @@
-# Orch
+# Ork
 
-Orch is an alpha-stage orchestration tool for ephemeral preview, test, and development environments.
+Ork is an alpha-stage orchestration tool for ephemeral preview, test, and development environments.
 
 It reads a manifest, runs components on local or remote runners, captures operational state, and tears environments down from that state.
 
 ## Status
 
-Orch is early and moving quickly. The core lifecycle is in place, but the manifest and adapter contracts should still be treated as alpha.
+Ork is early and moving quickly. The core lifecycle is in place, but the manifest and adapter contracts should still be treated as alpha.
 
 Current areas of focus:
 
@@ -22,26 +22,26 @@ Current areas of focus:
 Install the CLI:
 
 ```sh
-curl -fsSL https://tryorch.dev/install | sh
+curl -fsSL https://tryork.dev/install | sh
 ```
 
 Or build from source:
 
 ```sh
-go build -o bin/orch ./cmd/orch
+go build -o bin/ork ./cmd/ork
 ```
 
-Create `orch.yaml`:
+Create `ork.yaml`:
 
 ```yaml
-version: orch/1.0
+version: ork/1.0
 
 metadata:
   id: hello
   description: Local script example
   owner:
-    name: Orch
-    email: orch@example.com
+    name: Ork
+    email: ork@example.com
 
 runners:
   local:
@@ -54,25 +54,25 @@ components:
     runner: local
     source:
       embedded: |
-        echo "message=hello from orch" >> "$ORCH_OUTPUT_ENV"
+        echo "message=hello from ork" >> "$ORK_OUTPUT_ENV"
     outputs:
       - name: message
     hooks:
       post_apply:
-        - command: echo ${setup.outputs.message}
+        - command: echo ${hello.outputs.message}
       post_destroy:
-        - command: echo ${setup.outputs.message} and bye now!
+        - command: echo ${hello.outputs.message} and bye now!
 ```
 
 Run it:
 
 ```sh
-bin/orch up --env-id demo
-bin/orch state inspect --env-id demo
-bin/orch down --env-id demo
+bin/ork up --env-id demo
+bin/ork state inspect --env-id demo
+bin/ork down --env-id demo
 ```
 
-After a successful `down`, Orch deletes the environment state bundle.
+After a successful `down`, Ork deletes the environment state bundle.
 
 ## Documentation
 
@@ -96,4 +96,4 @@ Smoke tests live in `tests/`. Some require local tools or cloud credentials and 
 
 ## License
 
-Orch is licensed under the terms in `LICENSE`.
+Ork is licensed under the terms in `LICENSE`.
