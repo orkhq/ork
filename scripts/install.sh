@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="tryork/ork"
+repo="orkhq/ork"
 version="${ORK_VERSION:-latest}"
 install_dir="${ORK_INSTALL_DIR:-}"
 

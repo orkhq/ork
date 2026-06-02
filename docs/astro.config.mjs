@@ -13,7 +13,7 @@ export default defineConfig({
 			logo: {
 				src: './src/assets/logo.svg',
 			},
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/tryork/ork' }],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/orkhq/ork' }],
 			sidebar: [
 				{
 					label: 'Getting Started',
