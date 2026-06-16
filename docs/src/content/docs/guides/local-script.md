@@ -12,7 +12,7 @@ metadata:
   id: script-example
   description: Local script environment
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 runners:

@@ -1,10 +1,10 @@
 ---
-title: Ork
+title: ork
 description: Ephemeral environment orchestration for preview, test, and development sandboxes.
 template: splash
 head:
   - tag: title
-    content: Ork | Environment Orchestration
+    content: ork | Environment Orchestration
 ---
 
 <div class="ork-landing">
@@ -12,10 +12,10 @@ head:
     <div>
       <p class="ork-eyebrow">Environment orchestration</p>
       <h1>Bring up real environments. Tear them down cleanly.</h1>
-      <p class="ork-lead">Ork orchestrates component execution across local and remote runners, capturing state as it goes so every environment can be inspected, retried, and torn down reliably.</p>
+      <p class="ork-lead">ork orchestrates component execution across local and remote runners, capturing state as it goes so every environment can be inspected, retried, and torn down reliably.</p>
       <div class="ork-actions">
         <a class="ork-button ork-button-primary" href="/getting-started/quickstart/">Get started</a>
-        <a class="ork-button ork-button-secondary" href="/concepts/environments/">Read concepts</a>
+        <a class="ork-button ork-button-secondary" href="/getting-started/why-ork-exists/">Why ork exists</a>
       </div>
     </div>
 
@@ -28,7 +28,7 @@ head:
   <section class="ork-band">
     <div class="ork-section-head">
       <h2>One manifest for the messy middle.</h2>
-      <p>Real environments rarely belong to one tool. Ork gives those pieces a shared lifecycle so setup scripts, containers, infrastructure modules, cloud stacks, hooks, and outputs can move together.</p>
+      <p>Real environments rarely belong to one tool. ork gives those pieces a shared lifecycle so setup scripts, containers, infrastructure modules, cloud stacks, hooks, and outputs can move together. Runners define where components execute: your local machine, an SSH host, or another execution target later.</p>
     </div>
 
     <div class="ork-tool-grid">
@@ -45,7 +45,7 @@ head:
       <article class="ork-tool-card">
         <div class="ork-tool-icon">TF</div>
         <h3>Terraform</h3>
-        <p>Apply modules, capture outputs, and preserve local state artifacts.</p>
+        <p>Run modules as one part of a larger environment lifecycle.</p>
       </article>
       <article class="ork-tool-card">
         <div class="ork-tool-icon">CF</div>
@@ -66,7 +66,7 @@ head:
       <p>The manifest stays close to the way developers already describe environments: runners, components, source, outputs, hooks, and state backend configuration.</p>
       <div class="ork-point-list">
         <div class="ork-point">Components can depend on outputs from earlier components.</div>
-        <div class="ork-point">Adapters capture payloads and artifacts needed for teardown.</div>
+        <div class="ork-point">Adapters preserve the non-sensitive state and artifacts needed for teardown.</div>
         <div class="ork-point">State backends keep runtime facts outside the manifest.</div>
       </div>
     </div>
@@ -75,7 +75,7 @@ head:
   <section class="ork-band">
     <div class="ork-section-head">
       <h2>Designed around lifecycle, not just launch.</h2>
-      <p>Ork tracks where each component is in the run, captures the operational facts needed to destroy it, and keeps enough context to retry after interruption.</p>
+      <p>ork tracks where each component is in the run, captures the runtime facts needed to destroy it, and keeps enough context to retry after interruption.</p>
     </div>
 
     <div class="ork-flow">
@@ -92,7 +92,7 @@ head:
       <article>
         <span>03</span>
         <h3>Capture</h3>
-        <p>Persist non-sensitive outputs, payloads, and tool artifacts.</p>
+        <p>Persist non-sensitive runtime facts, outputs, payloads, and tool artifacts.</p>
       </article>
       <article>
         <span>04</span>
@@ -118,13 +118,17 @@ head:
         <strong>State and recovery</strong>
         <span>Understand statuses, stages, artifacts, and retry behavior.</span>
       </a>
+      <a href="/getting-started/why-ork-exists/">
+        <strong>Why ork exists</strong>
+        <span>Read the lifecycle-first rationale behind ork.</span>
+      </a>
       <a href="/adapters/script/">
         <strong>Adapters</strong>
-        <span>Use Script, Docker Compose, Terraform, and CloudFormation.</span>
+        <span>Use today's adapters and follow how new component types fit in.</span>
       </a>
       <a href="/security/overview/">
         <strong>Security</strong>
-        <span>Learn how Ork treats state, outputs, SSH, and credentials.</span>
+        <span>Learn how ork treats state, outputs, SSH, and credentials.</span>
       </a>
     </div>
   </section>

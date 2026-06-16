@@ -1,6 +1,6 @@
 ---
 title: Docker Compose Environment
-description: Run a Compose project as an Ork component.
+description: Run a Compose project as an ork component.
 ---
 
 Use the Docker Compose adapter when a component is described by one or more Compose files.
@@ -29,11 +29,11 @@ components:
         curl -fsS "$BASE_URL/health"
 ```
 
-Ork copies the Compose files into the runner workdir and runs Compose from there.
+ork copies the Compose files into the runner workdir and runs Compose from there.
 
 ## Published Ports
 
-Docker Compose does not define user outputs, but Ork automatically captures published port metadata under `_meta`.
+Docker Compose does not define user outputs, but ork automatically captures published port metadata under `_meta`.
 
 ```yaml
 env:

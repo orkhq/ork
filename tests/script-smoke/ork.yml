@@ -4,7 +4,7 @@ metadata:
   id: script-smoke
   description: Local script adapter smoke test
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 state:

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Ork CloudFormation smoke test stack.
+Description: ork CloudFormation smoke test stack.
 
 Resources:
   SmokeParameter:

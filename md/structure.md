@@ -100,7 +100,7 @@ ork/
 
 ## State persistence decisions
 
-Ork owns one environment state document per environment ID. The default local backend stores it at:
+ork owns one environment state document per environment ID. The default local backend stores it at:
 
 ```text
 .ork/<env-id>/state.json
@@ -130,7 +130,7 @@ terraform.tfstate.backup
 .terraform.lock.hcl
 ```
 
-During `up`, Ork saves the Ork state document and then captures declared artifacts from the runner into the configured state backend. During `down`, Ork restores artifacts to the runner before calling the adapter destroy path.
+During `up`, ork saves the ork state document and then captures declared artifacts from the runner into the configured state backend. During `down`, ork restores artifacts to the runner before calling the adapter destroy path.
 
 Artifact capture currently uses temporary files as a bridge. The runner API copies files to and from filesystem paths, and the backend API also saves/restores from filesystem paths. We cannot assume direct runner-to-backend streaming, especially for future remote/object-store backends, so the flow is:
 

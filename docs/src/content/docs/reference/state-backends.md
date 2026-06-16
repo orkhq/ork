@@ -1,11 +1,11 @@
 ---
 title: State Backends
-description: Configure where Ork stores environment state.
+description: Configure where ork stores environment state.
 ---
 
-Ork uses one state backend per manifest.
+ork uses one state backend per manifest.
 
-If `state` is omitted, Ork uses the local backend with `.ork` as the root.
+If `state` is omitted, ork uses the local backend with `.ork` as the root.
 
 ## Local
 
@@ -29,7 +29,7 @@ Layout:
 <root>/<env-id>/artifacts/<component-name>/<artifact-path>
 ```
 
-After a successful `down`, Ork removes `<root>/<env-id>`.
+After a successful `down`, ork removes `<root>/<env-id>`.
 
 ## S3
 
@@ -63,7 +63,7 @@ s3://<bucket>/<prefix>/<env-id>/artifacts/<component-name>/<artifact-path>
 
 The S3 backend uses ambient AWS authentication through the AWS SDK default config chain.
 
-After a successful `down`, Ork deletes objects under `<prefix>/<env-id>/`.
+After a successful `down`, ork deletes objects under `<prefix>/<env-id>/`.
 
 ## Locking
 

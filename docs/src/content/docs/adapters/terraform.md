@@ -54,7 +54,7 @@ config:
     instance_type: t3.micro
 ```
 
-If a Terraform variable has no default and is not present in `vars`, Ork checks for an environment variable with the same name and uses that value. If no value is found, Ork emits a warning.
+If a Terraform variable has no default and is not present in `vars`, ork checks for an environment variable with the same name and uses that value. If no value is found, ork emits a warning.
 
 ## Environment
 
@@ -75,7 +75,7 @@ Terraform outputs are captured from:
 terraform output -json
 ```
 
-Terraform outputs marked sensitive by Terraform are ignored by Ork and are not persisted in Ork state.
+Terraform outputs marked sensitive by Terraform are ignored by ork and are not persisted in ork state.
 
 Non-sensitive Terraform outputs must still be declared in the component `outputs` list to be available for interpolation:
 
@@ -84,11 +84,11 @@ outputs:
   - name: url
 ```
 
-Output values are converted to strings. Scalar values, lists, and maps are stringified by Ork's output conversion helpers.
+Output values are converted to strings. Scalar values, lists, and maps are stringified by ork's output conversion helpers.
 
 ## State Artifacts
 
-If the module does not define a Terraform backend block, Ork captures local Terraform state artifacts after apply:
+If the module does not define a Terraform backend block, ork captures local Terraform state artifacts after apply:
 
 | Artifact | Required | Sensitive | Description |
 | --- | --- | --- | --- |
@@ -96,9 +96,9 @@ If the module does not define a Terraform backend block, Ork captures local Terr
 | `terraform.tfstate.backup` | No | Yes | Backup state file when present. |
 | `.terraform.lock.hcl` | No | No | Provider lock file. |
 
-Before destroy, Ork restores captured artifacts to the component workdir.
+Before destroy, ork restores captured artifacts to the component workdir.
 
-If the module defines a backend block, Ork treats Terraform as owning its own remote state and skips local state artifact capture.
+If the module defines a backend block, ork treats Terraform as owning its own remote state and skips local state artifact capture.
 
 ## Apply Behavior
 

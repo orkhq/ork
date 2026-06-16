@@ -1,9 +1,9 @@
 ---
 title: Manifest
-description: The core Ork manifest structure.
+description: The core ork manifest structure.
 ---
 
-The manifest describes an environment: inputs, state backend, runners, and the components Ork applies and destroys.
+The manifest describes an environment: inputs, state backend, runners, and the components ork applies and destroys.
 
 ```yaml
 version: ork/1.0
@@ -52,7 +52,7 @@ The manifest format is still alpha. Field names and adapter behavior may change 
 | `state` | No | State backend selection. Defaults to the local backend when omitted. |
 | `inputs` | No | Named values that can be supplied by flags, params files, or defaults. |
 | `runners` | Yes | Execution targets available to components. |
-| `components` | Yes | Ordered component declarations. Ork builds a dependency graph from this list. |
+| `components` | Yes | Ordered component declarations. ork builds a dependency graph from this list. |
 
 ## Field Reference
 

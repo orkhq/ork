@@ -1,6 +1,6 @@
-# Ork Docs
+# ork Docs
 
-This is the public documentation site for Ork, built with Astro Starlight.
+This is the public documentation site for ork, built with Astro Starlight.
 
 [![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/small.svg)](https://starlight.astro.build)
 

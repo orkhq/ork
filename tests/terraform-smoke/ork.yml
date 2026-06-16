@@ -4,7 +4,7 @@ metadata:
   id: terraform-smoke
   description: Local Terraform smoke test
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 state:

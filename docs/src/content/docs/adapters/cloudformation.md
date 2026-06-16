@@ -87,7 +87,7 @@ outputs:
   - name: PublicURL
 ```
 
-If the stack has no outputs, Ork treats that as an empty output set.
+If the stack has no outputs, ork treats that as an empty output set.
 
 ## Apply Behavior
 

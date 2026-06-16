@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install and run the Ork CLI.
+description: Install and run the ork CLI.
 ---
 
 Install the latest release:

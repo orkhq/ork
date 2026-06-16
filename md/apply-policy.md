@@ -1,6 +1,6 @@
 # Apply policy
 
-This document describes the current Ork behavior for repeated `up` runs, partial failures, and component state. It also captures proposals we have intentionally deferred.
+This document describes the current ork behavior for repeated `up` runs, partial failures, and component state. It also captures proposals we have intentionally deferred.
 
 ## Current behavior
 
@@ -16,13 +16,13 @@ For each component in dependency order:
 - `destroying`: stop and ask the user to run `down` again first
 - `applied`: skip it and rehydrate its persisted outputs for downstream interpolation, unless `--reapply` is set
 
-Skipping an already applied component is the default because not every adapter is naturally idempotent. Docker Compose, Terraform, and CloudFormation can usually converge safely, but the script adapter can perform arbitrary side effects. Until Ork has fingerprinting and explicit reapply policies, the conservative behavior is to avoid rerunning live components.
+Skipping an already applied component is the default because not every adapter is naturally idempotent. Docker Compose, Terraform, and CloudFormation can usually converge safely, but the script adapter can perform arbitrary side effects. Until ork has fingerprinting and explicit reapply policies, the conservative behavior is to avoid rerunning live components.
 
 `ork up --reapply` disables this skip behavior globally. It runs the normal apply flow again for already-applied components, including hooks, adapter apply, output validation, artifact capture, and final state save.
 
 ## State write points
 
-Ork stores component state aggressively so `down` has the best available information after a failed or interrupted run.
+ork stores component state aggressively so `down` has the best available information after a failed or interrupted run.
 
 Current `up` write points:
 
@@ -40,7 +40,7 @@ save state
 run post_apply hooks
 ```
 
-If a pre-apply hook, adapter apply, output validation, artifact capture, or post-apply hook fails, Ork marks the component as `failed`, records the lifecycle `stage`, and saves state. When the adapter returned destroyable state before the failure, Ork preserves that state so `ork down` can still attempt cleanup.
+If a pre-apply hook, adapter apply, output validation, artifact capture, or post-apply hook fails, ork marks the component as `failed`, records the lifecycle `stage`, and saves state. When the adapter returned destroyable state before the failure, ork preserves that state so `ork down` can still attempt cleanup.
 
 Current `down` write points:
 
@@ -57,7 +57,7 @@ run post_destroy hooks
 
 ## Failure policy
 
-If component `x` fails after earlier components were applied, Ork stops the apply. It does not automatically tear down earlier components.
+If component `x` fails after earlier components were applied, ork stops the apply. It does not automatically tear down earlier components.
 
 This is intentional:
 
@@ -81,7 +81,7 @@ Destroys components recorded in state, in reverse order.
 
 ## Outputs on repeated up
 
-When a component is skipped because it is already `applied`, Ork registers the outputs stored in state so later components can still interpolate values such as:
+When a component is skipped because it is already `applied`, ork registers the outputs stored in state so later components can still interpolate values such as:
 
 ```yaml
 env:
@@ -90,7 +90,7 @@ env:
 
 Sensitive outputs are intentionally not stored in state. This means a fresh `ork up` process cannot rehydrate sensitive outputs from an already-applied component. If a new or retried component needs a sensitive output from an already-applied component, that interpolation can fail. This is a known tradeoff until we have a secret backend or an explicit refresh/reapply policy.
 
-Ork records this distinction in the in-memory resolver when it skips an already-applied component. Non-sensitive outputs stored in state are available for interpolation. Sensitive outputs that were declared in the manifest but dropped from state are marked as unavailable, and interpolation fails only if something actually references them.
+ork records this distinction in the in-memory resolver when it skips an already-applied component. Non-sensitive outputs stored in state are available for interpolation. Sensitive outputs that were declared in the manifest but dropped from state are marked as unavailable, and interpolation fails only if something actually references them.
 
 Example:
 
@@ -108,7 +108,7 @@ components:
       DATABASE_PASSWORD: "${db.outputs.password}"
 ```
 
-If `db` is freshly applied in the same `ork up` process, both outputs are available in memory. If `db` was already applied in a previous run and is skipped, `url` can be rehydrated from state but `password` cannot. Ork returns an explicit error explaining that the sensitive output is unavailable because it is not persisted.
+If `db` is freshly applied in the same `ork up` process, both outputs are available in memory. If `db` was already applied in a previous run and is skipped, `url` can be rehydrated from state but `password` cannot. ork returns an explicit error explaining that the sensitive output is unavailable because it is not persisted.
 
 ## Adapter behavior
 
@@ -118,7 +118,7 @@ Current repeated-up behavior is mostly orchestrator-owned:
 - failed and applying components are retried through the adapter
 - destroyed or missing components are applied through the adapter
 
-Adapters still own their native apply behavior when Ork decides to call them:
+Adapters still own their native apply behavior when ork decides to call them:
 
 - Docker Compose runs `docker compose up -d`
 - Terraform runs `terraform apply`

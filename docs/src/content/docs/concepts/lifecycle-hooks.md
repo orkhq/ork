@@ -36,9 +36,9 @@ The command is passed as the script argument to the shell. This is different fro
 
 ## Environment
 
-Hook env values can use Ork interpolation. Hook commands can interpolate explicit inputs and component outputs, but normal `$ENV_VAR` expansion is left to the shell on the runner.
+Hook env values can use ork interpolation. Hook commands can interpolate explicit inputs and component outputs, but normal `$ENV_VAR` expansion is left to the shell on the runner.
 
-Ork also sets component runtime variables during hook execution:
+ork also sets component runtime variables during hook execution:
 
 - `ORK_ENV_ID`
 - `ORK_COMPONENT_NAME`

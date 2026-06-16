@@ -43,7 +43,7 @@ Scripts run source files, not inline command strings, so the default does not in
 
 ## Outputs
 
-Ork sets two managed environment variables for scripts:
+ork sets two managed environment variables for scripts:
 
 - `ORK_OUTPUT_ENV`
 - `ORK_OUTPUT_JSON`
@@ -66,11 +66,11 @@ cat > "$ORK_OUTPUT_JSON" <<'JSON'
 JSON
 ```
 
-If both files are present, Ork reads dotenv first and JSON second. JSON wins when both files contain the same output key.
+If both files are present, ork reads dotenv first and JSON second. JSON wins when both files contain the same output key.
 
 JSON output values may be strings, numbers, booleans, or null. Objects and arrays are rejected until output typing exists.
 
-Because Ork interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside manifest commands when you want the runner shell to expand them.
+Because ork interpolation uses `${...}`, prefer plain shell variables such as `$TOKEN` inside manifest commands when you want the runner shell to expand them.
 
 ## Output schema
 
@@ -88,7 +88,7 @@ outputs:
 
 `name` is required. `required` defaults to `true`.
 
-After every component apply, Ork enforces the output schema:
+After every component apply, ork enforces the output schema:
 
 - missing required outputs fail the apply
 - missing optional outputs are allowed

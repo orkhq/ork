@@ -71,7 +71,7 @@ Destroy hooks can reference persisted component outputs from state.
 
 ## Interpolation
 
-Hook commands support Ork inputs and component outputs:
+Hook commands support ork inputs and component outputs:
 
 ```text
 ${component.outputs.name}
@@ -107,7 +107,7 @@ Hooks additionally receive:
 
 `ORK_WORKDIR` is hook-specific. It is the directory used as the hook command's working directory, not a global promise about every adapter command.
 
-Hook `env` values override component env values for that hook command. Ork-managed env values are set last.
+Hook `env` values override component env values for that hook command. ork-managed env values are set last.
 
 ## Failure behavior
 

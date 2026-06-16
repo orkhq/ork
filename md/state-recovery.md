@@ -1,18 +1,18 @@
 # State recovery
 
-Ork state records both a component `status` and the lifecycle `stage` where that status was last captured.
+ork state records both a component `status` and the lifecycle `stage` where that status was last captured.
 
-`status` answers what Ork believes about the component outcome. `stage` answers where Ork was in the lifecycle when that outcome was written.
+`status` answers what ork believes about the component outcome. `stage` answers where ork was in the lifecycle when that outcome was written.
 
 ## Statuses
 
 | Status | Meaning | `ork up` behavior | `ork down` behavior |
 | --- | --- | --- | --- |
-| `applying` | Ork started an apply flow and did not complete it cleanly. | Retry with a warning. | Attempt destroy if state is available. |
-| `applied` | Ork believes the component is live and destroyable. | Skip by default; reapply with `--reapply`. | Attempt destroy. |
-| `failed` | Ork recorded a failure. Resources may or may not exist. | Retry if the stage is apply-side; block if the stage is destroy-side. | Attempt destroy if state is available. |
-| `destroying` | Ork started a destroy flow and did not complete it cleanly. | Block; run `down` again first. | Retry destroy. |
-| `destroyed` | Ork completed destroy. | Apply again if needed. | Skip. |
+| `applying` | ork started an apply flow and did not complete it cleanly. | Retry with a warning. | Attempt destroy if state is available. |
+| `applied` | ork believes the component is live and destroyable. | Skip by default; reapply with `--reapply`. | Attempt destroy. |
+| `failed` | ork recorded a failure. Resources may or may not exist. | Retry if the stage is apply-side; block if the stage is destroy-side. | Attempt destroy if state is available. |
+| `destroying` | ork started a destroy flow and did not complete it cleanly. | Block; run `down` again first. | Retry destroy. |
+| `destroyed` | ork completed destroy. | Apply again if needed. | Skip. |
 
 `skipped` is not a persisted status. Skipping is an event from a single `up` run, not durable component state.
 
@@ -68,7 +68,7 @@ post_destroy
 - `destroyed`: skip
 - all other statuses: attempt destroy in reverse state order
 
-This means `failed` does not mean "nothing exists." It means "Ork failed while doing work." If the component has enough state for destroy, `down` should try to clean it up.
+This means `failed` does not mean "nothing exists." It means "ork failed while doing work." If the component has enough state for destroy, `down` should try to clean it up.
 
 ## Reapply
 
@@ -148,7 +148,7 @@ The future answer is either a secrets backend or an explicit reapply/replace wor
 
 State is not a secret store. It should remember the operational handles needed for recovery and teardown, such as names, workdirs, resource IDs, stack names, project names, and tool-state artifacts. It should not remember application secrets unless a future secrets backend explicitly provides that behavior.
 
-Destroy flows should prefer ambient authentication and stable non-secret identifiers. A destroy hook that depends on a sensitive output from another component may work during the same process that produced that output, but it cannot be recovered from persisted state today. In a later process, Ork should fail clearly rather than silently inventing or leaking a secret.
+Destroy flows should prefer ambient authentication and stable non-secret identifiers. A destroy hook that depends on a sensitive output from another component may work during the same process that produced that output, but it cannot be recovered from persisted state today. In a later process, ork should fail clearly rather than silently inventing or leaking a secret.
 
 This is a deliberate boundary:
 
@@ -158,7 +158,7 @@ This is a deliberate boundary:
 
 ## State Save Failures
 
-If an adapter apply succeeds but Ork cannot save state, Ork returns a loud error. Resources may exist without recoverable state.
+If an adapter apply succeeds but ork cannot save state, ork returns a loud error. Resources may exist without recoverable state.
 
 Future work may add an emergency local recovery file, but the current behavior is intentionally simple and explicit.
 
@@ -190,9 +190,9 @@ For now, normal recovery paths are:
 
 ## Manifest Dependency
 
-Today, `ork down` still requires the manifest. The manifest tells Ork how to load the state backend and how to reach the runners. State tells Ork what components were applied and what payload/artifacts are needed for adapter teardown.
+Today, `ork down` still requires the manifest. The manifest tells ork how to load the state backend and how to reach the runners. State tells ork what components were applied and what payload/artifacts are needed for adapter teardown.
 
-Component state stores the runner reference, not the full runner config. During `down`, Ork looks up the referenced runner in the current manifest and uses that manifest runner config to connect. Component state also stores unresolved `pre_destroy` and `post_destroy` hook declarations, so teardown uses the destroy hooks that were applied with the component rather than whatever hooks happen to be in the current manifest.
+Component state stores the runner reference, not the full runner config. During `down`, ork looks up the referenced runner in the current manifest and uses that manifest runner config to connect. Component state also stores unresolved `pre_destroy` and `post_destroy` hook declarations, so teardown uses the destroy hooks that were applied with the component rather than whatever hooks happen to be in the current manifest.
 
 `ork down` accepts the same parameter injection model as `ork up`. Params files, CLI params, and OS environment values can resolve manifest component env and hook env at teardown time. Resolved component env values are passed to destroy hooks and adapter destroy calls, but they are not stored in state.
 
@@ -206,4 +206,4 @@ Runner ambient-auth checks surface this boundary today. If a runner uses non-amb
 
 Future work should add drift detection without storing runner credentials in state. The likely shape is a warning-only runner fingerprint: store a canonical, sanitized fingerprint of the applied runner declaration, recompute it from the current manifest during `down`, and warn if the runner definition changed. Fingerprinting should prefer schema-aware sanitization for known runner/provider configs over broad key-name heuristics.
 
-Future Ork Cloud should remove this manifest dependency for teardown by storing enough runtime metadata with the environment. In that model, teardown can run from cloud-managed state and runner identity without checking out the original manifest.
+Future ork Cloud should remove this manifest dependency for teardown by storing enough runtime metadata with the environment. In that model, teardown can run from cloud-managed state and runner identity without checking out the original manifest.

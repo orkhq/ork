@@ -31,7 +31,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:           "ork",
-		Short:         "Ork — ephemeral sandbox orchestrator",
+		Short:         "ork — ephemeral sandbox orchestrator",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		CompletionOptions: cobra.CompletionOptions{
@@ -56,7 +56,7 @@ func main() {
 
 	initCmd := &cobra.Command{
 		Use:   "init",
-		Short: "Create a starter Ork manifest",
+		Short: "Create a starter ork manifest",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := scaffold.RunInit(scaffold.InitOptions{
 				Path:  manifestPath,
@@ -137,7 +137,7 @@ func main() {
 
 	stateCmd := &cobra.Command{
 		Use:   "state",
-		Short: "Inspect and manage Ork state",
+		Short: "Inspect and manage ork state",
 	}
 
 	stateInspectCmd := &cobra.Command{

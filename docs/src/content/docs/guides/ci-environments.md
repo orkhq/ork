@@ -1,6 +1,6 @@
 ---
 title: CI Environments
-description: Run Ork from stateless job runners.
+description: Run ork from stateless job runners.
 ---
 
 CI runners are often stateless. The job that applies an environment may not be the job that destroys it.

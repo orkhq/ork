@@ -1,12 +1,12 @@
 # Security
 
-Ork is an orchestration tool that executes commands, copies files, persists operational state, and talks to remote runners. Treat its configuration and state with the same care as other infrastructure automation systems.
+ork is an orchestration tool that executes commands, copies files, persists operational state, and talks to remote runners. Treat its configuration and state with the same care as other infrastructure automation systems.
 
 ## Command And Environment Secrecy
 
-Ork should not log command invocations or environment values by default.
+ork should not log command invocations or environment values by default.
 
-Runner stdout and stderr are process output. If a hook, script, or provider CLI prints a secret, Ork will stream that output because it cannot reliably distinguish secret text from normal process output.
+Runner stdout and stderr are process output. If a hook, script, or provider CLI prints a secret, ork will stream that output because it cannot reliably distinguish secret text from normal process output.
 
 Guidelines:
 
@@ -16,7 +16,7 @@ Guidelines:
 - do not enable future command tracing in environments where commands may contain secrets
 - avoid printing tool state, provider output, or environment dumps in scripts and hooks
 
-For SSH runners, Ork sends environment exports and the command body through a stdin shell wrapper instead of placing them directly in the remote SSH command string. This keeps environment values out of the remote process arguments. The values still exist in the remote shell environment while the command runs, which is expected for environment-based secret passing.
+For SSH runners, ork sends environment exports and the command body through a stdin shell wrapper instead of placing them directly in the remote SSH command string. This keeps environment values out of the remote process arguments. The values still exist in the remote shell environment while the command runs, which is expected for environment-based secret passing.
 
 ## SSH Host Keys
 
@@ -56,7 +56,7 @@ Pinned fingerprints, direct public-key pinning, and trust-on-first-use are inten
 
 ## State And Artifacts
 
-Ork state is operational state, not a secret store. Even when sensitive outputs are dropped, state can still contain infrastructure-sensitive information:
+ork state is operational state, not a secret store. Even when sensitive outputs are dropped, state can still contain infrastructure-sensitive information:
 
 - component names and locations
 - runner workdirs
@@ -73,7 +73,7 @@ The default `ork state inspect` table intentionally avoids outputs, payloads, an
 
 Sensitive outputs are process-local unless a future secrets backend exists.
 
-They are available to downstream components during the same `ork up` process that produced them. They are not persisted in state. If a later `up` or `down` references a sensitive output from an already-applied component, Ork should fail clearly instead of inventing or leaking a value.
+They are available to downstream components during the same `ork up` process that produced them. They are not persisted in state. If a later `up` or `down` references a sensitive output from an already-applied component, ork should fail clearly instead of inventing or leaking a value.
 
 ## Ambient Auth And Teardown
 
@@ -81,6 +81,6 @@ Reliable teardown assumes ambient authority on the runner.
 
 Today, `ork down` still needs the manifest to configure the state backend and runner topology. It should not rely on secret material embedded in the manifest. Runner ambient-auth checks surface this boundary by warning when the runner requires non-ambient credentials.
 
-Credential exposure warnings follow the same direction. Ork warns when component environment values use keys that look like access mechanisms, such as token, secret, password, private key, credential, access-key, API-key, or known cloud credential environment variables. These warnings name only the keys, not the values.
+Credential exposure warnings follow the same direction. ork warns when component environment values use keys that look like access mechanisms, such as token, secret, password, private key, credential, access-key, API-key, or known cloud credential environment variables. These warnings name only the keys, not the values.
 
-Future Ork Cloud should store enough runtime metadata to tear down from persisted state and runner identity without requiring the original manifest checkout.
+Future ork Cloud should store enough runtime metadata to tear down from persisted state and runner identity without requiring the original manifest checkout.

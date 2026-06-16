@@ -6,7 +6,7 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'Ork',
+			title: 'ork',
 			description:
 				'Ephemeral environment orchestration for preview, test, and development sandboxes.',
 			customCss: ['./src/styles/custom.css'],
@@ -19,6 +19,7 @@ export default defineConfig({
 					label: 'Getting Started',
 					items: [
 						{ label: 'Introduction', slug: 'getting-started/introduction' },
+						{ label: 'Why ork Exists', slug: 'getting-started/why-ork-exists' },
 						{ label: 'Installation', slug: 'getting-started/installation' },
 						{ label: 'Quickstart', slug: 'getting-started/quickstart' },
 					],

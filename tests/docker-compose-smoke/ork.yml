@@ -4,7 +4,7 @@ metadata:
   id: docker-compose-smoke
   description: Local Docker Compose smoke test
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 state:

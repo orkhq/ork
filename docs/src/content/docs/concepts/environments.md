@@ -1,6 +1,6 @@
 ---
 title: Environments
-description: How Ork identifies and manages environment instances.
+description: How ork identifies and manages environment instances.
 ---
 
 An environment is one run of a manifest under a specific `env-id`.

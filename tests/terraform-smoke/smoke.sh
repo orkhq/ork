@@ -52,7 +52,7 @@ if terraform -chdir="$WORK_DIR" state list | grep -q '^terraform_data.smoke$'; t
 fi
 
 if ! grep -q '"status": "destroyed"' "$STATE_FILE"; then
-  echo "Expected Ork component state to be marked destroyed" >&2
+  echo "Expected ork component state to be marked destroyed" >&2
   exit 1
 fi
 

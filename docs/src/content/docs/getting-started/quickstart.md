@@ -1,11 +1,11 @@
 ---
 title: Quickstart
-description: Run a local script component with Ork.
+description: Run a local script component with ork.
 ---
 
 This quickstart runs a local script component, captures an output, inspects state, and tears the environment down.
 
-## Install Ork
+## Install ork
 
 ```sh
 curl -fsSL https://tryork.dev/install | sh
@@ -29,7 +29,7 @@ metadata:
   id: hello
   description: Local script example
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 runners:
@@ -54,7 +54,7 @@ components:
 ork up --env-id demo
 ```
 
-Ork applies the component and writes state under `.ork/demo` by default.
+ork applies the component and writes state under `.ork/demo` by default.
 
 ## Inspect
 
@@ -70,4 +70,4 @@ The default table output shows component status, stage, type, runner, and timest
 ork down --env-id demo
 ```
 
-After a successful destroy, Ork deletes the whole environment state bundle, including artifacts.
+After a successful destroy, ork deletes the whole environment state bundle, including artifacts.

@@ -3,7 +3,7 @@ title: Components
 description: Manifest component fields.
 ---
 
-Components are the units Ork applies, records, inspects, and destroys.
+Components are the units ork applies, records, inspects, and destroys.
 
 ```yaml
 components:
@@ -30,7 +30,7 @@ components:
 | `type` | Yes | Adapter name, such as `script`, `docker-compose`, `terraform`, or `cloudformation`. |
 | `runner` | Yes | Runner name from the `runners` map. |
 | `depends_on` | No | Components that must apply before this component. Destroy runs in reverse state order. |
-| `workdir` | No | Component work directory on the runner. Ork builds a default when omitted. |
+| `workdir` | No | Component work directory on the runner. ork builds a default when omitted. |
 | `source` | Adapter-specific | Component source. Each adapter decides which source modes it supports. |
 | `with` | No | Supporting files copied into the component workdir but not treated as executable/source entrypoints. |
 | `config` | Adapter-specific | Adapter configuration. |

@@ -56,7 +56,7 @@ metadata:
   id: s3-state-smoke
   description: S3 state backend smoke test
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 state:
@@ -124,7 +124,7 @@ fi
 
 STATE_JSON="$(aws s3 cp "s3://$BUCKET/$STATE_KEY" - --region "$REGION")"
 if ! grep -q '"status": "destroyed"' <<<"$STATE_JSON"; then
-  echo "Expected S3 Ork component state to be marked destroyed" >&2
+  echo "Expected S3 ork component state to be marked destroyed" >&2
   exit 1
 fi
 

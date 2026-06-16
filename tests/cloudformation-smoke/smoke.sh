@@ -82,7 +82,7 @@ if aws ssm get-parameter --name "$PARAMETER_NAME" --region "$REGION" >/dev/null 
 fi
 
 if ! grep -q '"status": "destroyed"' "$STATE_FILE"; then
-  echo "Expected Ork component state to be marked destroyed" >&2
+  echo "Expected ork component state to be marked destroyed" >&2
   exit 1
 fi
 

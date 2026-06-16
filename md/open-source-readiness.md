@@ -1,6 +1,6 @@
 # Open source readiness plan
 
-This is the working plan for getting Ork ready for outside contributors and early users. The goal is to keep the project moving without losing the thread on safety, recovery, and trust.
+This is the working plan for getting ork ready for outside contributors and early users. The goal is to keep the project moving without losing the thread on safety, recovery, and trust.
 
 ## 1. State and recovery semantics
 
@@ -47,7 +47,7 @@ Needed:
 
 State and artifact security action points:
 
-- document that Ork state is operational state, not a secret store
+- document that ork state is operational state, not a secret store
 - document that state backends and artifacts should be treated as sensitive infrastructure data
 - keep default `state inspect` table output free of outputs, payloads, and artifacts
 - audit adapter payloads so secrets are not persisted accidentally
@@ -60,10 +60,10 @@ State and artifact security action points:
 
 Teardown and manifest dependency:
 
-- current `down` still requires the manifest so Ork can configure the state backend and runner topology
+- current `down` still requires the manifest so ork can configure the state backend and runner topology
 - reliable teardown should not require secret material embedded in that manifest
 - ambient-auth checks are runner-owned for now; adapters should not grow their own credential detector unless component/provider config starts explicitly carrying credentials
-- future Ork Cloud should keep enough runtime/environment metadata to run teardown from persisted state without needing the original manifest checkout
+- future ork Cloud should keep enough runtime/environment metadata to run teardown from persisted state without needing the original manifest checkout
 - in that future model, teardown uses persisted state plus cloud/runtime runner identity, not apply-time manifest secrets
 
 SSH host key verification action points:
@@ -78,13 +78,13 @@ SSH host key verification action points:
 
 Command/env secrecy action points:
 
-- define the policy: Ork does not log command invocations or env values by default
+- define the policy: ork does not log command invocations or env values by default
 - audit runner, adapter, hook, script, event, debug, and error paths for command/env leakage
 - keep events generic, such as `hook started`, without interpolated command text
 - avoid including raw command strings or env maps in errors
 - replace SSH inline env with a stdin shell wrapper so env values are not placed in remote process args
 - prefer passing secrets through env over direct command interpolation in docs and examples
-- do not use the environment resolver for shell command interpolation; shell commands should only interpolate explicit Ork inputs and component outputs, leaving normal `$ENV_VAR` expansion to the shell on the runner
+- do not use the environment resolver for shell command interpolation; shell commands should only interpolate explicit ork inputs and component outputs, leaving normal `$ENV_VAR` expansion to the shell on the runner
 - add tests proving SSH command strings do not contain env values and hook events do not include command contents
 
 ## 3. Adapter contract

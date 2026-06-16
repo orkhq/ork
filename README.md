@@ -1,12 +1,13 @@
-# Ork
+# ork
+[![CLI](https://github.com/orkhq/ork/actions/workflows/cli.yml/badge.svg)](https://github.com/orkhq/ork/actions/workflows/cli.yml) 
 
-Ork is an alpha-stage orchestration tool for ephemeral preview, test, and development environments.
+ork is an alpha-stage orchestration tool for ephemeral preview, test, and development environments.
 
-It reads a manifest, runs components on local or remote runners, captures operational state, and tears environments down from that state.
+It reads a manifest, runs components on local or remote runners, captures operational state, and tears environments down from that state. Learn more at [tryork.dev](https://tryork.dev).
 
 ## Status
 
-Ork is early and moving quickly. The core lifecycle is in place, but the manifest and adapter contracts should still be treated as alpha.
+ork is early and moving quickly. The core lifecycle is in place, but the manifest and adapter contracts should still be treated as alpha.
 
 Current areas of focus:
 
@@ -40,7 +41,7 @@ metadata:
   id: hello
   description: Local script example
   owner:
-    name: Ork
+    name: ork
     email: ork@example.com
 
 runners:
@@ -72,7 +73,7 @@ bin/ork state inspect --env-id demo
 bin/ork down --env-id demo
 ```
 
-After a successful `down`, Ork deletes the environment state bundle.
+After a successful `down`, ork deletes the environment state bundle.
 
 ## Documentation
 
@@ -96,4 +97,4 @@ Smoke tests live in `tests/`. Some require local tools or cloud credentials and 
 
 ## License
 
-Ork is licensed under the terms in `LICENSE`.
+ork is licensed under the terms in `LICENSE`.

@@ -1,9 +1,9 @@
 ---
 title: Components
-description: Components are the units Ork applies and destroys.
+description: Components are the units ork applies and destroys.
 ---
 
-Components are the units of work in an Ork environment.
+Components are the units of work in an ork environment.
 
 Each component has:
 

@@ -1,6 +1,6 @@
 ---
 title: CLI
-description: Current Ork command reference.
+description: Current ork command reference.
 ---
 
 ## Global
@@ -53,7 +53,7 @@ ork down --env-id <id> [--file ork.yaml] [--param key=value] [--params-file path
 
 Destroys an environment from persisted state.
 
-`down` still needs the manifest today so Ork can load the state backend and runner topology.
+`down` still needs the manifest today so ork can load the state backend and runner topology.
 
 `down` accepts the same `--param` and `--params-file` inputs as `up`, so runner and component environment pointers can be resolved during teardown.
 

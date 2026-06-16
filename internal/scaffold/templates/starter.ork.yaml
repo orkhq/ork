@@ -2,7 +2,7 @@ version: ork/1.0
 
 metadata:
   id: {{ .ID }}
-  description: Starter Ork environment
+  description: Starter ork environment
   owner:
     name: Your Name
     email: you@example.com

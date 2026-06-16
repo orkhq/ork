@@ -1,6 +1,6 @@
 # State backends
 
-Ork has one state backend per manifest. The backend stores the Ork environment state document and any adapter-declared tool-state artifacts needed for teardown.
+ork has one state backend per manifest. The backend stores the ork environment state document and any adapter-declared tool-state artifacts needed for teardown.
 
 ## Manifest shape
 
@@ -11,7 +11,7 @@ state:
     path: .ork
 ```
 
-If `state` is omitted, Ork defaults to the local backend at `.ork`.
+If `state` is omitted, ork defaults to the local backend at `.ork`.
 
 ```yaml
 state:
@@ -51,7 +51,7 @@ s3://my-ork-state/previews/pr-123/artifacts/tf/terraform.tfstate
 
 ## Write ordering
 
-Ork writes component state before and after risky lifecycle steps. Before adapter apply, the component is marked `applying` and the state document is saved. After a successful apply, Ork builds the final component state in memory, captures declared artifacts first, and then writes `state.json` with status `applied`.
+ork writes component state before and after risky lifecycle steps. Before adapter apply, the component is marked `applying` and the state document is saved. After a successful apply, ork builds the final component state in memory, captures declared artifacts first, and then writes `state.json` with status `applied`.
 
 This ordering is intentional. A newly written state document should not reference artifacts that failed to persist.
 
@@ -84,7 +84,7 @@ Rules:
 
 Terraform is currently the adapter that needs this. With Terraform's default local backend, `terraform.tfstate` must be preserved or `terraform destroy` cannot know what resources exist on a stateless runner.
 
-If a Terraform module defines its own backend block, Ork treats Terraform as owning its state and skips local tfstate artifact capture.
+If a Terraform module defines its own backend block, ork treats Terraform as owning its state and skips local tfstate artifact capture.
 
 ```hcl
 terraform {
@@ -154,7 +154,7 @@ Destroy marks components as destroyed and saves the state document as it progres
 
 After every component and post-destroy hook succeeds, `ork down` deletes the whole environment state bundle. For the local backend this removes `<root>/<env-id>`, including `state.json` and `artifacts/`. For S3 this deletes every object under `<prefix>/<env-id>/`.
 
-If teardown fails before completion, Ork keeps the state bundle so the next `ork down` can retry cleanup with the last captured state and artifacts.
+If teardown fails before completion, ork keeps the state bundle so the next `ork down` can retry cleanup with the last captured state and artifacts.
 
 ## Locking and revisions
 

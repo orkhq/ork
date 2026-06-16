@@ -25,4 +25,4 @@ Use insecure mode only for local development or disposable test hosts.
 
 The SSH runner sends an execution wrapper over stdin so environment values do not have to appear in the remote command string.
 
-Ork does not intend to log raw command invocations or env values by default. User scripts can still print secrets to stdout or stderr, so treat process output as potentially sensitive.
+ork does not intend to log raw command invocations or env values by default. User scripts can still print secrets to stdout or stderr, so treat process output as potentially sensitive.

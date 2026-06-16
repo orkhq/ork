@@ -104,7 +104,7 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 			emitter.Emit(events.Event{
 				Type: events.EventWarning,
 				Message: fmt.Sprintf(
-					"Runner uses non-ambient credentials (%v). This component cannot be reliably torn down by Ork.",
+					"Runner uses non-ambient credentials (%v). This component cannot be reliably torn down by ork.",
 					strings.Join(list, ", "),
 				),
 				Hint:      "Use ambient authentication for the runner to enable safe teardown of this component.",

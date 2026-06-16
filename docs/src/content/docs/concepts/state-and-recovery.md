@@ -1,9 +1,9 @@
 ---
 title: State and Recovery
-description: How Ork persists progress and recovers from failures.
+description: How ork persists progress and recovers from failures.
 ---
 
-Ork stores operational state so it can recover from interrupted or failed runs.
+ork stores operational state so it can recover from interrupted or failed runs.
 
 State is not a secret store. It records handles needed for recovery and teardown: component names, runners, work directories, adapter payloads, outputs that are safe to persist, lifecycle status, and artifacts.
 
@@ -47,7 +47,7 @@ ork up --env-id demo --reapply
 
 Apply-side failures can usually be retried with `ork up`.
 
-Destroy-side failures block `up`; run `ork down` again so Ork can finish cleanup.
+Destroy-side failures block `up`; run `ork down` again so ork can finish cleanup.
 
 ## Successful Down
 

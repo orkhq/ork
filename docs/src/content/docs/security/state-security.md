@@ -1,6 +1,6 @@
 ---
 title: State Security
-description: How to think about Ork state and artifacts.
+description: How to think about ork state and artifacts.
 ---
 
 State is operational data. It is not a secret store, but it can still be sensitive.
@@ -14,7 +14,7 @@ State may include:
 - lifecycle status and stage
 - artifacts needed for teardown
 
-Artifacts can include tool-local state such as Terraform state. Terraform state may contain sensitive values even when Ork does not treat them as component outputs.
+Artifacts can include tool-local state such as Terraform state. Terraform state may contain sensitive values even when ork does not treat them as component outputs.
 
 ## Recommendations
 

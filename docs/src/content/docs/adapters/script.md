@@ -123,7 +123,7 @@ Apply does the following:
 3. Copies `with` files to the runner workdir.
 4. Clears previous `.ork-outputs.env` and `.ork-outputs.json`.
 5. Executes scripts sequentially.
-6. Copies output files back to Ork and parses outputs.
+6. Copies output files back to ork and parses outputs.
 7. Stores script list, shell, and workdir in component state.
 
 ## Destroy Behavior

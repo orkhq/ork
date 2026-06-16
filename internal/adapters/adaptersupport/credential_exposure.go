@@ -94,7 +94,7 @@ func credentialExposureWarning(c *manifestcore.Component, refs []string) events.
 	return events.Event{
 		Type: events.EventWarning,
 		Message: fmt.Sprintf(
-			"Component environment contains keys that look like access mechanisms (%s). Ork will pass these values to runner processes.",
+			"Component environment contains keys that look like access mechanisms (%s). ork will pass these values to runner processes.",
 			strings.Join(refs, ", "),
 		),
 		Hint:      "Prefer ambient auth, runner-local secret injection, or short-lived environment values when possible.",
