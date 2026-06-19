@@ -1,3 +1,6 @@
+// Package main is the entry point for the ork CLI, an ephemeral environment
+// orchestrator. It provides commands to initialize manifests, provision (up)
+// and tear down (down) environments, and inspect persisted state.
 package main
 
 import (
@@ -14,8 +17,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Logger is initialized in PersistentPreRunE
-// because it depends on parsed flags and TTY detection.
+// logger is the root application logger, initialized in PersistentPreRunE
+// because it depends on parsed flags (--debug) and TTY detection for output formatting.
 var logger logging.Logger
 
 func main() {

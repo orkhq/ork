@@ -16,6 +16,8 @@ type ComponentResolver struct {
 	mutex                          sync.RWMutex // thread-safe for concurrent component execution
 }
 
+// NewComponentResolver creates an empty ComponentResolver ready to receive
+// component output registrations as components are applied.
 func NewComponentResolver() *ComponentResolver {
 	return &ComponentResolver{
 		outputs:                        make(map[string]string),

@@ -5,6 +5,8 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// V1Manifest is the raw YAML structure for manifest version "ork/1.0". It uses
+// a map-keyed component layout that is normalized into a slice by V1Parser.
 type V1Manifest struct {
 	Version    string                                 `yaml:"version"`
 	Inputs     map[string]manifestcore.Input          `yaml:"inputs,omitempty"`
@@ -14,6 +16,7 @@ type V1Manifest struct {
 	Components map[string]manifestcore.Component      `yaml:"components"`
 }
 
+// V1Parser implements Parser for the "ork/1.0" manifest version.
 type V1Parser struct{}
 
 func (p *V1Parser) Parse(data []byte) (*manifestcore.Manifest, error) {

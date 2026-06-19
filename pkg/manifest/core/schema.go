@@ -1,7 +1,13 @@
+// Package manifestcore defines the canonical data structures that represent a
+// parsed ork manifest. These types are shared across parsers, the orchestrator,
+// and adapters.
 package manifestcore
 
 import "fmt"
 
+// Manifest is the top-level representation of an ork environment definition.
+// It contains all components to provision, runner configurations, inputs, and
+// metadata.
 type Manifest struct {
 	Version    string                    `yaml:"version"`
 	Inputs     map[string]Input          `yaml:"inputs,omitempty"`
@@ -11,11 +17,15 @@ type Manifest struct {
 	Components []Component               `yaml:"components"`
 }
 
+// StateConfig specifies the backend and configuration used for persisting
+// environment state between ork runs.
 type StateConfig struct {
 	Backend string                 `yaml:"backend,omitempty"`
 	Config  map[string]interface{} `yaml:"config,omitempty"`
 }
 
+// Input defines a user-supplied variable that can be referenced in component
+// configurations via ${inputs.<name>} interpolation.
 type Input struct {
 	Description string `yaml:"description"`
 	Type        string `yaml:"type"`
@@ -24,6 +34,8 @@ type Input struct {
 	Required    bool   `yaml:"required,omitempty"`
 }
 
+// Metadata carries descriptive information about the environment such as its
+// identifier, description, ownership, and labels.
 type Metadata struct {
 	ID          string            `yaml:"id"`
 	Description string            `yaml:"description"`
@@ -31,11 +43,14 @@ type Metadata struct {
 	Labels      map[string]string `yaml:"labels,omitempty"`
 }
 
+// Owner identifies the team or individual responsible for the environment.
 type Owner struct {
 	Name  string `yaml:"name"`
 	Email string `yaml:"email"`
 }
 
+// RunnerManifest describes a runner's type and configuration as declared in the
+// manifest. Runners are the execution contexts where components are applied.
 type RunnerManifest struct {
 	Type   string
 	Config map[string]interface{} `yaml:"config"`
@@ -46,12 +61,16 @@ type RunnerManifest struct {
 
 type ComponentType string
 
+// Hook defines a shell command to run at a specific lifecycle point (pre/post
+// apply or destroy) for a component.
 type Hook struct {
 	Command string            `yaml:"command"`
 	Shell   []string          `yaml:"shell,omitempty"`
 	Env     map[string]string `yaml:"env,omitempty"`
 }
 
+// Hooks groups the lifecycle hooks for a component into pre/post apply and
+// pre/post destroy phases.
 type Hooks struct {
 	PreApply    []Hook `yaml:"pre_apply,omitempty"`
 	PostApply   []Hook `yaml:"post_apply,omitempty"`
@@ -71,6 +90,8 @@ func (h Hooks) HasAny() bool {
 	return h.HasApplyHooks() || h.HasDestroyHooks()
 }
 
+// ComponentSource specifies where the component's source material comes from.
+// Exactly one of Embedded, Path, or Files must be set.
 type ComponentSource struct {
 	// Embedded allows embedding raw string content directly in the manifest.
 	Embedded string `yaml:"embedded,omitempty" json:"embedded,omitempty"`
@@ -120,6 +141,8 @@ func (c ComponentSource) Type() ComponentSourceType {
 	return ComponentSourceTypeNone
 }
 
+// Output declares an output value produced by a component after apply. Outputs
+// can be referenced by downstream components via variable interpolation.
 type Output struct {
 	Name      string `yaml:"name"`
 	Required  *bool  `yaml:"required,omitempty"`
@@ -131,6 +154,9 @@ func (o Output) IsRequired() bool {
 	return o.Required == nil || *o.Required
 }
 
+// Component represents a single unit of infrastructure or service to be
+// provisioned. Components declare their adapter type, runner, dependencies,
+// configuration, hooks, and expected outputs.
 type Component struct {
 	Name      string                 `yaml:"name"`
 	Type      string                 `yaml:"type"`

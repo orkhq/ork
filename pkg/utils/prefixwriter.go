@@ -5,6 +5,9 @@ import (
 	"sync"
 )
 
+// PrefixWriter is an io.Writer that prepends a fixed prefix to the beginning of
+// each line written. It is used to tag command output with runner/component
+// context.
 type PrefixWriter struct {
 	w           io.Writer
 	prefix      string
@@ -12,6 +15,8 @@ type PrefixWriter struct {
 	atLineStart bool
 }
 
+// NewPrefixWriter creates a PrefixWriter that writes to w with the given prefix
+// prepended to each line.
 func NewPrefixWriter(w io.Writer, prefix string) *PrefixWriter {
 	return &PrefixWriter{
 		w:           w,
@@ -57,6 +62,8 @@ func (pw *PrefixWriter) Write(p []byte) (int, error) {
 	return total, nil
 }
 
+// EnsureLineEnd writes a trailing newline if the last written byte was not a
+// newline, ensuring clean output separation.
 func (pw *PrefixWriter) EnsureLineEnd() error {
 	pw.mu.Lock()
 	defer pw.mu.Unlock()

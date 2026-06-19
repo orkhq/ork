@@ -23,6 +23,8 @@ const (
 	lifecyclePostDestroy lifecycleHookPhase = "post_destroy"
 )
 
+// hookExecutionContext carries all the state needed to execute lifecycle hooks
+// for a given component, including resolvers, emitter, and environment.
 type hookExecutionContext struct {
 	envID           string
 	componentRef    *manifestcore.Component
@@ -35,6 +37,9 @@ type hookExecutionContext struct {
 	emitter         events.Emitter
 }
 
+// runLifecycleHooks executes a sequence of lifecycle hooks (pre/post apply/destroy)
+// on the runner. Each hook command is interpolated, then executed in the
+// component's working directory. Execution stops on the first failure.
 func runLifecycleHooks(ctx context.Context, t runners.Runner, hooks []manifestcore.Hook, phase lifecycleHookPhase, hookCtx hookExecutionContext) error {
 	if len(hooks) == 0 {
 		return nil

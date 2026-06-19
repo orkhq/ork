@@ -7,6 +7,9 @@ import (
 
 var envIDRegex = regexp.MustCompile(`^[a-z][a-z0-9-]{1,61}[a-z0-9]$`)
 
+// ValidateEnvID checks that the environment ID matches the required format:
+// lowercase alphanumeric with hyphens, 3-63 characters (e.g. "pr-123",
+// "dev-alice").
 func ValidateEnvID(id string) error {
 	if id == "" {
 		return fmt.Errorf("environment ID is required")

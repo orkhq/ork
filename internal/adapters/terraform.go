@@ -26,8 +26,14 @@ import (
 	"ork/pkg/utils"
 )
 
+// TerraformAdapter manages Terraform module-based components. It copies modules
+// to the runner, runs init/apply/destroy, handles backend detection, and
+// captures terraform outputs as component outputs.
 type TerraformAdapter struct{}
 
+// TerraformConfig holds adapter-specific configuration for Terraform components,
+// including input variables, the resolved module path, discovered variables,
+// and backend information.
 type TerraformConfig struct {
 	Vars map[string]string `mapstructure:"vars"`
 
@@ -38,6 +44,8 @@ type TerraformConfig struct {
 	BackendType    string
 }
 
+// TerraformState is persisted after apply so that destroy can locate the runner
+// working directory and replay the same input variables.
 type TerraformState struct {
 	Vars    map[string]string `mapstructure:"vars" json:"vars"`
 	WorkDir string            `mapstructure:"workdir" json:"workdir"`

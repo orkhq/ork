@@ -17,7 +17,13 @@ import (
 	"ork/pkg/utils"
 )
 
+// DockerComposeAdapter manages Docker Compose-based components. It copies
+// compose files to the runner, brings services up with docker compose, and
+// captures dynamically assigned port mappings as outputs.
 type DockerComposeAdapter struct{}
+
+// DockerComposeConfig holds adapter-specific configuration for Docker Compose
+// components, including optional CLI flags and a custom compose command.
 type DockerComposeConfig struct {
 	Flags []string `mapstructure:"flags"`
 	// Optional custom runner command, e.g., "docker compose" or "docker-compose"
@@ -27,6 +33,8 @@ type DockerComposeConfig struct {
 	Files    []string
 }
 
+// DockerComposeState is persisted after apply so that destroy can locate the
+// project and compose files needed for teardown.
 type DockerComposeState struct {
 	Command      []string          `mapstructure:"command" json:"command"`
 	ComposeFiles []string          `mapstructure:"compose_files" json:"compose_files"`

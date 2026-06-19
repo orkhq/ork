@@ -1,3 +1,7 @@
+// Package orchestration implements the core ork lifecycle: provisioning
+// components in dependency order (up), tearing them down in reverse order
+// (down), and inspecting persisted state. It coordinates adapters, runners,
+// variable resolution, lifecycle hooks, and state persistence.
 package orchestration
 
 import (
@@ -16,13 +20,17 @@ import (
 	"ork/pkg/varresolvers"
 )
 
+// job groups a validated component with its resolved runner and adapter,
+// ready for execution during the apply phase.
 type job struct {
 	c *manifestcore.Component
 	r *runners.Runner
 	a *adapters.Adapter
 }
 
+// UpOptions configures the behavior of RunUpWithOptions.
 type UpOptions struct {
+	// Reapply forces re-execution of components that are already marked applied.
 	Reapply bool
 }
 
@@ -33,10 +41,14 @@ const (
 	existingComponentSkip  existingComponentAction = "skip"
 )
 
+// RunUp provisions all components defined in the manifest using default options.
 func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	return RunUpWithOptions(envID, m, logger, inputs, UpOptions{})
 }
 
+// RunUpWithOptions provisions all components in dependency order. It validates
+// configs, connects runners, resolves variables, executes lifecycle hooks, and
+// persists state after each component apply.
 func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string, options UpOptions) error {
 	componentResolver := varresolvers.NewComponentResolver()
 	inputsResolver, err := varresolvers.NewInputsResolver(inputs, m.Inputs)

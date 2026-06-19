@@ -1,3 +1,5 @@
+// Package scaffold provides manifest initialization and scaffolding for new ork
+// projects. It generates a starter ork.yaml manifest from a built-in template.
 package scaffold
 
 import (
@@ -14,12 +16,19 @@ import (
 //go:embed templates/starter.ork.yaml
 var templatesFS embed.FS
 
+// InitOptions configures manifest initialization behavior.
 type InitOptions struct {
-	Path  string
-	ID    string
+	// Path is the file path to write the generated manifest (default: "ork.yaml").
+	Path string
+	// ID is the manifest metadata ID; defaults to the sanitized current directory name.
+	ID string
+	// Force allows overwriting an existing manifest file.
 	Force bool
 }
 
+// RunInit creates a starter ork manifest file at the configured path. It
+// infers a manifest ID from the working directory if none is provided and
+// refuses to overwrite an existing file unless Force is set.
 func RunInit(options InitOptions) error {
 	if options.Path == "" {
 		options.Path = "ork.yaml"

@@ -8,10 +8,15 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// InputsResolver resolves expressions of the form "inputs.<name>" using the
+// user-supplied input values. It validates required inputs and applies defaults
+// from the manifest schema.
 type InputsResolver struct {
 	Inputs map[string]string
 }
 
+// NewInputsResolver creates an InputsResolver, validating that all required
+// inputs are provided and filling in defaults from the schema where applicable.
 func NewInputsResolver(inputs map[string]string, schema map[string]manifestcore.Input) (*InputsResolver, error) {
 	for key := range schema {
 		if _, ok := inputs[key]; !ok {

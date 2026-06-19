@@ -2,11 +2,15 @@ package runners
 
 import "github.com/go-viper/mapstructure/v2"
 
+// ProviderConfig is the interface for cloud provider credential configurations
+// that runners inject as environment variables into execution contexts.
 type ProviderConfig interface {
 	IsConfigured() bool
 	BuildEnvVars() map[string]string
 }
 
+// AWSProviderConfig holds AWS credentials and region for injection into a
+// runner's execution environment.
 type AWSProviderConfig struct {
 	Region          string `mapstructure:"region"`
 	AccessKeyID     string `mapstructure:"access_key_id"`
@@ -31,6 +35,8 @@ func (a *AWSProviderConfig) BuildEnvVars() map[string]string {
 	return envs
 }
 
+// AggregatedProviderConfig collects all provider configurations for a runner
+// and produces a merged set of environment variables.
 type AggregatedProviderConfig struct {
 	AWS *AWSProviderConfig `mapstructure:"aws,omitempty"`
 }
@@ -46,6 +52,9 @@ func (a *AggregatedProviderConfig) GetAllEnvVars() map[string]string {
 	return envs
 }
 
+// RetrieveProviderConfigForRunner decodes the raw provider map from a runner
+// manifest and returns the aggregated environment variables and the parsed
+// provider config.
 func RetrieveProviderConfigForRunner(config map[string]interface{}) (map[string]string, *AggregatedProviderConfig, error) {
 	var pcfg AggregatedProviderConfig
 	if err := mapstructure.Decode(config, &pcfg); err != nil {

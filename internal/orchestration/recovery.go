@@ -6,6 +6,9 @@ import (
 	"ork/pkg/state"
 )
 
+// upActionForExistingComponent determines whether a component found in persisted
+// state should be re-applied or skipped during a subsequent "up" run. It returns
+// an error for components that require a "down" before they can be re-applied.
 func upActionForExistingComponent(componentState state.ComponentState, options UpOptions) (existingComponentAction, error) {
 	switch componentState.Status {
 	case state.StatusApplied:

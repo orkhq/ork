@@ -17,8 +17,13 @@ import (
 	"ork/pkg/utils"
 )
 
+// CloudFormationAdapter deploys and tears down AWS CloudFormation stacks. It
+// copies templates to the runner, runs aws cloudformation deploy, and captures
+// stack outputs.
 type CloudFormationAdapter struct{}
 
+// CloudFormationConfig holds adapter-specific configuration for CloudFormation
+// components, including stack name, region, parameters, capabilities, and tags.
 type CloudFormationConfig struct {
 	StackName    string            `mapstructure:"stack_name"`
 	Region       string            `mapstructure:"region"`
@@ -30,6 +35,8 @@ type CloudFormationConfig struct {
 	TemplatePath string
 }
 
+// CloudFormationState is persisted after apply so that destroy can identify
+// the stack to delete by name and region.
 type CloudFormationState struct {
 	Region       string `mapstructure:"region" json:"region,omitempty"`
 	StackName    string `mapstructure:"stack_name" json:"stack_name"`

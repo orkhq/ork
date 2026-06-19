@@ -10,6 +10,8 @@ import (
 	"ork/pkg/runners"
 )
 
+// CaptureArtifacts copies all declared artifacts from the runner to the state
+// backend. Non-required artifacts that cannot be fetched are silently skipped.
 func (sm *Manager) CaptureArtifacts(ctx context.Context, component ComponentState, runner runners.Runner) error {
 	for _, artifact := range component.Artifacts {
 		if err := sm.captureArtifact(ctx, component, artifact, runner); err != nil {
@@ -54,6 +56,8 @@ func (sm *Manager) captureArtifact(ctx context.Context, component ComponentState
 	return nil
 }
 
+// RestoreArtifacts copies all declared artifacts from the state backend back to
+// the runner, typically before a destroy operation.
 func (sm *Manager) RestoreArtifacts(ctx context.Context, component ComponentState, runner runners.Runner) error {
 	for _, artifact := range component.Artifacts {
 		if err := sm.restoreArtifact(ctx, component, artifact, runner); err != nil {
@@ -130,6 +134,8 @@ func artifactRunnerPath(workDir string, artifact Artifact) (string, error) {
 	return path.Join(workDir, cleaned), nil
 }
 
+// CleanArtifactPath validates and normalizes a relative artifact path, ensuring
+// it does not escape the component's working directory.
 func CleanArtifactPath(value string) (string, error) {
 	if value == "" {
 		return "", fmt.Errorf("path is required")

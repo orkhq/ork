@@ -1,3 +1,7 @@
+// Package state manages the persistent operational state of ork environments.
+// It tracks the status of each component through its lifecycle (applying,
+// applied, destroying, destroyed, failed), persists outputs and artifacts, and
+// enables idempotent re-runs and teardowns.
 package state
 
 import (
@@ -12,6 +16,7 @@ import (
 	"ork/pkg/runners"
 )
 
+// Status represents the current lifecycle status of a component.
 type Status string
 
 const (
@@ -22,6 +27,8 @@ const (
 	StatusDestroyed  Status = "destroyed"
 )
 
+// Stage identifies the specific lifecycle phase a component is in within its
+// current status (e.g. pre_apply, apply, outputs).
 type Stage string
 
 const (
@@ -51,12 +58,16 @@ type RunnerRef struct {
 	Type runners.RunnerType `json:"type"`
 }
 
+// ComponentStateData holds adapter-produced data for a component including
+// the working directory, arbitrary payload, and declared artifacts.
 type ComponentStateData struct {
 	WorkDir   string                 `json:"workdir"`
 	Payload   map[string]interface{} `json:"payload,omitempty"`
 	Artifacts []Artifact             `json:"artifacts,omitempty"`
 }
 
+// Artifact references a file produced by a component that should be captured
+// in the state backend for later restoration during destroy.
 type Artifact struct {
 	Name      string `json:"name"`
 	Path      string `json:"path"`
@@ -64,6 +75,8 @@ type Artifact struct {
 	Sensitive bool   `json:"sensitive,omitempty"`
 }
 
+// DestroyHooks captures the destroy-phase hooks from the manifest so they
+// remain available during teardown even if the manifest changes.
 type DestroyHooks struct {
 	PreDestroy  []manifestcore.Hook `json:"pre_destroy,omitempty"`
 	PostDestroy []manifestcore.Hook `json:"post_destroy,omitempty"`
@@ -275,6 +288,8 @@ func (sm *Manager) Delete() error {
 	return sm.backend.Delete(context.Background(), sm.envID)
 }
 
+// NewComponentState constructs a ComponentState for a successfully applied
+// component, combining manifest declarations with adapter-produced data.
 func NewComponentState(
 	component *manifestcore.Component,
 	runnerType runners.RunnerType,
@@ -307,6 +322,8 @@ func destroyHooksFromComponent(component *manifestcore.Component) DestroyHooks {
 	}
 }
 
+// NewComponentStateData creates a ComponentStateData by marshaling the payload
+// into a generic map and attaching the provided artifacts.
 func NewComponentStateData(workDir string, payload interface{}, artifacts ...Artifact) (ComponentStateData, error) {
 	mapped, err := ToMap(payload)
 	if err != nil {
@@ -320,6 +337,8 @@ func NewComponentStateData(workDir string, payload interface{}, artifacts ...Art
 	}, nil
 }
 
+// EmptyComponentStateData returns a ComponentStateData with no payload or
+// artifacts, useful for components that produce no state data.
 func EmptyComponentStateData(workDir string) ComponentStateData {
 	return ComponentStateData{
 		WorkDir: workDir,
@@ -327,6 +346,8 @@ func EmptyComponentStateData(workDir string) ComponentStateData {
 	}
 }
 
+// ToMap converts an arbitrary value to a map[string]interface{} via JSON
+// round-tripping. It returns an empty map for nil input.
 func ToMap(in interface{}) (map[string]interface{}, error) {
 	if in == nil {
 		return make(map[string]interface{}), nil
@@ -352,6 +373,8 @@ func ToMap(in interface{}) (map[string]interface{}, error) {
 	return out, nil
 }
 
+// SanitizeMap recursively redacts values whose keys match known sensitive
+// patterns (e.g. "password", "secret", "token") before persisting state.
 func SanitizeMap(in map[string]interface{}) map[string]interface{} {
 	if in == nil {
 		return nil
@@ -380,6 +403,8 @@ func SanitizeMap(in map[string]interface{}) map[string]interface{} {
 	return out
 }
 
+// IsSensitiveKey returns true if the given key contains a substring that
+// indicates it holds a secret value (e.g. "password", "token", "secret").
 func IsSensitiveKey(key string) bool {
 	normalized := strings.ToLower(key)
 	sensitiveParts := []string{
