@@ -7,17 +7,23 @@ import (
 	"time"
 )
 
+// FSCopyResult reports the outcome of an FSCopy operation.
 type FSCopyResult struct {
 	TotalBytes int64
 	TotalFiles int
 	Duration   time.Duration
 }
 
+// FSCopyOptions controls the behavior of FSCopy (recursive traversal and
+// overwrite semantics).
 type FSCopyOptions struct {
 	Recursive bool
 	Overwrite bool
 }
 
+// FSCopy recursively copies files between two filesystem endpoints (which may
+// be different FS implementations, e.g. local to SFTP). It returns summary
+// statistics and any error encountered.
 func FSCopy(from, to FSWithPath, opts FSCopyOptions) (FSCopyResult, error) {
 
 	totalBytes := int64(0)

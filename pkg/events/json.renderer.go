@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// JSONRenderer renders events as JSON objects to stdout, suitable for
+// machine-readable output in CI pipelines or non-TTY environments.
 type JSONRenderer struct{}
 
 func NewJSONRenderer() *JSONRenderer {

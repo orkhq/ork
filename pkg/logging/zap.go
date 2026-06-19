@@ -8,6 +8,8 @@ type zapLogger struct {
 	l *zap.Logger
 }
 
+// NewZapLogger wraps a zap.Logger to satisfy the Logger interface, translating
+// the generic Field type into zap fields.
 func NewZapLogger(l *zap.Logger) Logger {
 	return &zapLogger{l: l}
 }

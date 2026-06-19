@@ -1,3 +1,6 @@
+// Package manifest handles loading and version-dispatched parsing of ork
+// manifest files. A manifest declares the components, runners, inputs, and
+// metadata that define an ephemeral environment.
 package manifest
 
 import (
@@ -10,10 +13,15 @@ import (
 	manifestparsers "ork/pkg/manifest/parsers"
 )
 
+// VersionedManifest is a minimal struct used to extract the version field from a
+// raw manifest file before selecting the appropriate version-specific parser.
 type VersionedManifest struct {
 	Version string `yaml:"version"`
 }
 
+// Load reads a YAML manifest file from disk, determines its version, and
+// delegates parsing to the appropriate version-specific parser. It returns the
+// fully parsed Manifest or an error if the file cannot be read or parsed.
 func Load(path string, logger logging.Logger) (*manifestcore.Manifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

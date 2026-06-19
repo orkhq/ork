@@ -20,6 +20,8 @@ func MapToEnvSlice(envs ...map[string]string) []string {
 	return envSlice
 }
 
+// RunnerComponentPrefix returns a formatted prefix string "[runner > component] "
+// used to tag output lines with their execution context.
 func RunnerComponentPrefix(runner, component string) string {
 	return fmt.Sprintf("[%s > %s] ", runner, component)
 }

@@ -1,3 +1,6 @@
+// Package utils provides shared utility functions and abstractions used across
+// the ork codebase, including filesystem operations, terminal detection, shell
+// helpers, and validation.
 package utils
 
 import (
@@ -7,11 +10,15 @@ import (
 	"github.com/pkg/sftp"
 )
 
+// FileWriter combines io.Writer and io.Closer for writing to files on any
+// filesystem implementation.
 type FileWriter interface {
 	io.Writer
 	io.Closer
 }
 
+// FileReader combines io.Reader and io.Closer for reading files on any
+// filesystem implementation.
 type FileReader interface {
 	io.Reader
 	io.Closer
@@ -24,6 +31,8 @@ type FileInfo interface {
 	Mode() os.FileMode
 }
 
+// FS is a filesystem abstraction that allows ork to operate transparently on
+// local and remote (SFTP) filesystems.
 type FS interface {
 	Stat(path string) (os.FileInfo, error)
 	IsDir(path string) (bool, error)
@@ -122,6 +131,8 @@ func (s *SFTPFS) MkdirAll(path string) error {
 	return s.SftpClient.MkdirAll(path)
 }
 
+// FSWithPath pairs a filesystem implementation with a base path, used as a
+// source or destination in file copy operations.
 type FSWithPath struct {
 	FS   FS
 	Path string

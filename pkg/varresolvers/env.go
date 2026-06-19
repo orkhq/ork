@@ -6,8 +6,11 @@ import (
 	"os"
 )
 
+// EnvResolver resolves expressions by looking them up as environment variables
+// in the current process. It treats the entire expression as the variable name.
 type EnvResolver struct{}
 
+// NewEnvResolver creates an EnvResolver.
 func NewEnvResolver() *EnvResolver {
 	return &EnvResolver{}
 }

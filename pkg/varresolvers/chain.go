@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+// ChainResolver tries multiple resolvers in order, returning the result from
+// the first one that succeeds. This allows layering resolution strategies
+// (e.g. component outputs, then env vars, then inputs).
 type ChainResolver struct {
 	Resolvers []Resolver
 }

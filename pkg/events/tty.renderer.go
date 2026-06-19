@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// TTYRenderer renders events as human-readable, color-coded lines to stdout.
+// It uses Unicode icons and ANSI escape codes for visual distinction between
+// event types.
 type TTYRenderer struct{}
 
 func NewTTYRenderer() *TTYRenderer {

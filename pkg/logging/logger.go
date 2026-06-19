@@ -1,3 +1,7 @@
+// Package logging defines structured logging interfaces used throughout ork.
+// It provides a restricted DebugLogger for adapters and runners (preventing
+// excessive output) and a full Logger for the orchestrator itself. The
+// underlying implementation wraps go.uber.org/zap.
 package logging
 
 // Field is a lightweight structured field abstraction.

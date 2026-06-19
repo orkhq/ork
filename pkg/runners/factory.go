@@ -7,6 +7,9 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// FromManifest creates a Runner from a manifest runner declaration. It selects
+// the appropriate runner implementation based on the declared type and decodes
+// its configuration.
 func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {
 	env, _, err := RetrieveProviderConfigForRunner(mr.Providers)
 	if err != nil {
@@ -28,6 +31,8 @@ func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {
 	}
 }
 
+// FromManifestRunnersMap creates and validates all runners declared in the
+// manifest, returning a map keyed by runner name.
 func FromManifestRunnersMap(runnersMap map[string]manifestcore.RunnerManifest) (map[string]Runner, error) {
 	runners := make(map[string]Runner)
 	for name, mt := range runnersMap {

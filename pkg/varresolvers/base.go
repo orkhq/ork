@@ -1,3 +1,7 @@
+// Package varresolvers implements variable interpolation for ork manifests.
+// Expressions of the form ${...} in configuration values are resolved at
+// runtime by a chain of resolvers that handle component outputs, environment
+// variables, and user-supplied inputs.
 package varresolvers
 
 import (
@@ -6,12 +10,17 @@ import (
 	"regexp"
 )
 
+// Resolver resolves a single interpolation expression (the content between
+// ${ and }) to its string value. Implementations return an error if the
+// expression is not handled by this resolver.
 type Resolver interface {
 	Resolve(ctx context.Context, path string) (string, error)
 }
 
 var re = regexp.MustCompile(`\$\{([^}]+)}`)
 
+// InterpolateString replaces all ${...} expressions in s using the provided
+// Resolver. It returns the interpolated string or the first resolution error.
 func InterpolateString(ctx context.Context, s string, resolver Resolver) (string, error) {
 	var firstErr error
 	out := re.ReplaceAllStringFunc(s, func(match string) string {
@@ -71,6 +80,8 @@ func deepInterpolateValue(
 	}
 }
 
+// DeepInterpolate recursively walks a map and interpolates all string values
+// containing ${...} expressions using the provided Resolver.
 func DeepInterpolate(
 	ctx context.Context,
 	in map[string]interface{},
