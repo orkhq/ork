@@ -1,3 +1,5 @@
+// Package adaptersupport provides shared utilities for adapters, including
+// credential exposure detection and output value formatting.
 package adaptersupport
 
 import (
@@ -46,6 +48,9 @@ var credentialKeyParts = []string{
 	"token",
 }
 
+// CredentialExposureWarnings inspects a component's environment variables and
+// returns warning events for any keys that appear to contain secrets or
+// credentials, so operators are aware of sensitive data being passed to runners.
 func CredentialExposureWarnings(c *manifestcore.Component) []events.Event {
 	refs := detectCredentialExposureEnv(c.Env)
 

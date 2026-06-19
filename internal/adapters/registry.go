@@ -11,6 +11,8 @@ import (
 	"ork/pkg/state"
 )
 
+// ComponentSourceSupport declares which source types an adapter supports (local
+// path, named files, or inline embedded content).
 type ComponentSourceSupport struct {
 	Path     bool
 	Files    bool
@@ -49,14 +51,22 @@ func (s ComponentSourceSupport) SatisfiedBy(c manifestcore.ComponentSource) bool
 	return true
 }
 
+// ComponentConfig is a marker interface for adapter-specific configuration
+// structs returned by ValidateAndLoadConfig.
 type ComponentConfig interface{}
+// ComponentApplyOutput is a set of key-value output pairs produced by a
+// successful adapter Apply call.
 type ComponentApplyOutput map[string]string
 
+// ComponentApplyResult bundles the outputs and state data returned by an
+// adapter after a successful apply. State is persisted for later destroy.
 type ComponentApplyResult struct {
 	Outputs ComponentApplyOutput
 	State   state.ComponentStateData
 }
 
+// Adapter is the interface that infrastructure adapters must implement to
+// participate in ork's apply/destroy lifecycle.
 type Adapter interface {
 	Apply(ctx context.Context, c *manifestcore.Component, r runners.Runner) (ComponentApplyResult, error)
 	Destroy(ctx context.Context, c state.ComponentState, r runners.Runner) error
@@ -70,10 +80,13 @@ type Adapter interface {
 
 var registry = map[string]Adapter{}
 
+// Register adds an adapter to the global registry under the given name.
+// Adapters call this in their init() functions.
 func Register(name string, a Adapter) {
 	registry[name] = a
 }
 
+// Get retrieves a registered adapter by name, returning an error if none is found.
 func Get(name string) (Adapter, error) {
 	a, ok := registry[name]
 	if !ok {

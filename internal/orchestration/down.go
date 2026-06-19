@@ -15,6 +15,10 @@ import (
 	"ork/pkg/varresolvers"
 )
 
+// RunDown tears down all previously applied components in reverse dependency
+// order. It loads persisted state, restores artifacts, runs pre/post destroy
+// hooks, invokes adapter Destroy, and deletes state when all components are
+// successfully destroyed.
 func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	fmt.Printf("Tearing down sandbox: %s\n", envID)
 

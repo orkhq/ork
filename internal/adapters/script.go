@@ -20,12 +20,18 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 )
 
+// ScriptAdapter handles shell-script-based components. It copies script files
+// to the runner, executes them, and captures outputs from env or JSON files.
 type ScriptAdapter struct{}
 
+// ScriptConfig holds adapter-specific configuration for script components,
+// such as the shell interpreter to use.
 type ScriptConfig struct {
 	Shell []string `mapstructure:"shell"`
 }
 
+// ScriptState is the persisted state for a script component, recording which
+// scripts were run, the shell used, and the runner working directory.
 type ScriptState struct {
 	Scripts []string `mapstructure:"scripts" json:"scripts"`
 	Shell   []string `mapstructure:"shell" json:"shell"`

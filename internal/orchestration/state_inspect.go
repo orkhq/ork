@@ -13,11 +13,16 @@ import (
 	statebackends "ork/pkg/state/backends"
 )
 
+// StateInspectOptions configures the output format and destination for
+// RunStateInspect.
 type StateInspectOptions struct {
 	Output string
 	Writer io.Writer
 }
 
+// RunStateInspect loads the persisted state for an environment and renders it
+// as a table or JSON. It also displays recovery hints for components in
+// failed or interrupted states.
 func RunStateInspect(envID string, m *manifestcore.Manifest, logger logging.Logger, options StateInspectOptions) error {
 	writer := options.Writer
 	if writer == nil {

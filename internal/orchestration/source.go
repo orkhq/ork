@@ -7,6 +7,8 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// validateComponentSource checks that a component's source configuration is
+// well-formed and is supported by the resolved adapter.
 func validateComponentSource(component *manifestcore.Component, adapter adapters.Adapter) error {
 	if _, err := component.Source.Validate(); err != nil {
 		return fmt.Errorf("component %q has an invalid source configuration: %w", component.Name, err)

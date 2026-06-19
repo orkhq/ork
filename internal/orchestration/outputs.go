@@ -9,6 +9,8 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// validateOutputDeclarations checks that a component's declared outputs have
+// non-empty, unique, non-reserved names before apply begins.
 func validateOutputDeclarations(component *manifestcore.Component) error {
 	seen := make(map[string]struct{}, len(component.Outputs))
 	for _, output := range component.Outputs {
@@ -26,6 +28,8 @@ func validateOutputDeclarations(component *manifestcore.Component) error {
 	return nil
 }
 
+// validateApplyOutputs verifies that all required declared outputs were produced
+// by the adapter and emits warnings for any undeclared outputs.
 func validateApplyOutputs(component *manifestcore.Component, outputs adapters.ComponentApplyOutput, emitter events.Emitter) error {
 	declared := make(map[string]manifestcore.Output, len(component.Outputs))
 	for _, output := range component.Outputs {
@@ -53,6 +57,8 @@ func validateApplyOutputs(component *manifestcore.Component, outputs adapters.Co
 	return nil
 }
 
+// filterDeclaredOutputs returns only the outputs that are declared in the
+// component manifest or have reserved (_meta.*) names.
 func filterDeclaredOutputs(component *manifestcore.Component, outputs adapters.ComponentApplyOutput) adapters.ComponentApplyOutput {
 	filtered := make(adapters.ComponentApplyOutput)
 	for outputName, value := range outputs {
@@ -68,6 +74,8 @@ func filterDeclaredOutputs(component *manifestcore.Component, outputs adapters.C
 	return filtered
 }
 
+// filterStateOutputs returns the subset of declared outputs that should be
+// persisted to state. Sensitive outputs are excluded from state storage.
 func filterStateOutputs(component *manifestcore.Component, outputs adapters.ComponentApplyOutput) adapters.ComponentApplyOutput {
 	if len(outputs) == 0 {
 		return adapters.ComponentApplyOutput{}
