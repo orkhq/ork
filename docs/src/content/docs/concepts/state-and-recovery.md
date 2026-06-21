@@ -54,3 +54,14 @@ Destroy-side failures block `up`; run `ork down` again so ork can finish cleanup
 After every component and post-destroy hook succeeds, `ork down` deletes the environment state bundle.
 
 If teardown fails before completion, state is kept so the next `down` can retry.
+
+## Why Down Still Needs The Manifest
+
+Today, `ork down` needs the manifest for two pieces of live configuration that are intentionally not copied wholesale into state:
+
+- how to locate and authenticate to the configured state backend
+- how to reach each referenced runner and establish its provider context
+
+Persisted state supplies the component order, adapter payloads, non-sensitive outputs, destroy hooks, and artifacts needed for teardown. The manifest supplies the current connection and identity configuration. Keeping those responsibilities separate prevents ork state from becoming a credential store.
+
+This is a current CLI architecture constraint, not the intended final recovery experience. The planned ork daemon and managed state backend will retain the environment's sanitized execution topology and resolve state and runner identities from the control plane. Teardown initiated through that service will not require the original manifest checkout. Local, standalone CLI workflows may continue to use the manifest as their configuration source.

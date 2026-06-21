@@ -60,10 +60,12 @@ Destroys an environment from persisted state.
 ## state inspect
 
 ```sh
-ork state inspect --env-id <id> [--file ork.yaml] [--output table|json]
+ork state inspect --env-id <id> [--file ork.yaml] [--output table|json] [--param key=value] [--params-file path]
 ```
 
 Inspects persisted state for an environment.
+
+`--param` and `--params-file` resolve manifest inputs used by state backend authentication or configuration.
 
 The table view intentionally avoids outputs, payloads, and artifact contents.
 

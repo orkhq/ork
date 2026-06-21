@@ -23,7 +23,11 @@ func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inpu
 		return fmt.Errorf("failed to resolve inputs: %w", err)
 	}
 
-	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, logger.AsDebugLogger())
+	resolvedStateConfig, err := resolveStateConfig(context.Background(), m.State, stateConfigResolver(inputsResolver))
+	if err != nil {
+		return err
+	}
+	stateBackend, err := statebackends.FromManifestContext(context.Background(), resolvedStateConfig, logger.AsDebugLogger())
 	if err != nil {
 		return fmt.Errorf("failed to configure state backend: %w", err)
 	}

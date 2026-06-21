@@ -37,4 +37,14 @@ func TestFromManifest(t *testing.T) {
 			t.Fatalf("expected root .state, got %q", local.root)
 		}
 	})
+
+	t.Run("rejects auth for local backend", func(t *testing.T) {
+		_, err := FromManifest(&manifestcore.StateConfig{
+			Backend: "local",
+			Auth:    map[string]interface{}{"profile": "not-applicable"},
+		})
+		if err == nil {
+			t.Fatal("expected local backend auth config to be rejected")
+		}
+	})
 }

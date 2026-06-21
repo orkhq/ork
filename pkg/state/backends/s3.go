@@ -7,12 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
@@ -25,8 +27,17 @@ type S3Config struct {
 	Bucket               string `mapstructure:"bucket"`
 	Prefix               string `mapstructure:"prefix"`
 	Region               string `mapstructure:"region"`
+	Endpoint             string `mapstructure:"endpoint"`
+	ForcePathStyle       bool   `mapstructure:"force_path_style"`
 	ServerSideEncryption string `mapstructure:"server_side_encryption"`
 	KMSKeyID             string `mapstructure:"kms_key_id"`
+}
+
+type S3AuthConfig struct {
+	Profile         string `mapstructure:"profile"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	SessionToken    string `mapstructure:"session_token"`
 }
 
 type s3Client interface {
@@ -46,8 +57,12 @@ type S3 struct {
 	logger               logging.DebugLogger
 }
 
-func NewS3FromConfig(ctx context.Context, rawConfig map[string]interface{}, logger logging.DebugLogger) (*S3, error) {
+func NewS3FromConfig(ctx context.Context, rawConfig map[string]interface{}, rawAuth map[string]interface{}, logger logging.DebugLogger) (*S3, error) {
 	cfg, err := decodeS3Config(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+	authCfg, err := decodeS3AuthConfig(rawAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +71,59 @@ func NewS3FromConfig(ctx context.Context, rawConfig map[string]interface{}, logg
 	if cfg.Region != "" {
 		loadOptions = append(loadOptions, config.WithRegion(cfg.Region))
 	}
+	if authCfg.Profile != "" {
+		loadOptions = append(loadOptions, config.WithSharedConfigProfile(authCfg.Profile))
+	} else if authCfg.AccessKeyID != "" {
+		loadOptions = append(loadOptions, config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(authCfg.AccessKeyID, authCfg.SecretAccessKey, authCfg.SessionToken),
+		))
+	}
 	awsCfg, err := config.LoadDefaultConfig(ctx, loadOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config for S3 state backend: %w", err)
 	}
 
-	return NewS3(s3.NewFromConfig(awsCfg), cfg, logger), nil
+	return NewS3(newS3Client(awsCfg, cfg), cfg, logger), nil
+}
+
+func decodeS3AuthConfig(rawAuth map[string]interface{}) (S3AuthConfig, error) {
+	if len(rawAuth) == 0 {
+		return S3AuthConfig{}, nil
+	}
+
+	var cfg S3AuthConfig
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		Result:      &cfg,
+		TagName:     "mapstructure",
+	})
+	if err != nil {
+		return S3AuthConfig{}, fmt.Errorf("failed to initialize S3 state backend auth decoder: %w", err)
+	}
+	if err := decoder.Decode(rawAuth); err != nil {
+		return S3AuthConfig{}, fmt.Errorf("invalid S3 state backend auth config: %w", err)
+	}
+	cfg.Profile = strings.TrimSpace(cfg.Profile)
+	cfg.AccessKeyID = strings.TrimSpace(cfg.AccessKeyID)
+	if cfg.Profile != "" {
+		if cfg.AccessKeyID != "" || cfg.SecretAccessKey != "" || cfg.SessionToken != "" {
+			return S3AuthConfig{}, fmt.Errorf("invalid S3 state backend auth config: profile cannot be combined with access key credentials")
+		}
+		return cfg, nil
+	}
+	if cfg.AccessKeyID == "" || cfg.SecretAccessKey == "" {
+		return S3AuthConfig{}, fmt.Errorf("invalid S3 state backend auth config: access_key_id and secret_access_key are both required")
+	}
+	return cfg, nil
+}
+
+func newS3Client(awsCfg aws.Config, cfg S3Config) *s3.Client {
+	return s3.NewFromConfig(awsCfg, func(options *s3.Options) {
+		if cfg.Endpoint != "" {
+			options.BaseEndpoint = aws.String(cfg.Endpoint)
+		}
+		options.UsePathStyle = cfg.ForcePathStyle
+	})
 }
 
 func NewS3(client s3Client, cfg S3Config, logger logging.DebugLogger) *S3 {
@@ -90,6 +152,16 @@ func decodeS3Config(rawConfig map[string]interface{}) (S3Config, error) {
 	}
 	if cfg.Bucket == "" {
 		return S3Config{}, fmt.Errorf("invalid S3 state backend config: bucket is required")
+	}
+	if cfg.Endpoint != "" {
+		cfg.Endpoint = strings.TrimRight(strings.TrimSpace(cfg.Endpoint), "/")
+		parsedEndpoint, err := url.Parse(cfg.Endpoint)
+		if err != nil || parsedEndpoint.Host == "" || (parsedEndpoint.Scheme != "http" && parsedEndpoint.Scheme != "https") {
+			return S3Config{}, fmt.Errorf("invalid S3 state backend config: endpoint must be an absolute http or https URL")
+		}
+		if parsedEndpoint.User != nil || parsedEndpoint.RawQuery != "" || parsedEndpoint.Fragment != "" {
+			return S3Config{}, fmt.Errorf("invalid S3 state backend config: endpoint must not include credentials, a query, or a fragment")
+		}
 	}
 	switch cfg.ServerSideEncryption {
 	case "", string(types.ServerSideEncryptionAes256), string(types.ServerSideEncryptionAwsKms):

@@ -11,6 +11,7 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 	"ork/pkg/state"
 	statebackends "ork/pkg/state/backends"
+	"ork/pkg/varresolvers"
 )
 
 type StateInspectOptions struct {
@@ -18,13 +19,21 @@ type StateInspectOptions struct {
 	Writer io.Writer
 }
 
-func RunStateInspect(envID string, m *manifestcore.Manifest, logger logging.Logger, options StateInspectOptions) error {
+func RunStateInspect(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string, options StateInspectOptions) error {
 	writer := options.Writer
 	if writer == nil {
 		writer = io.Discard
 	}
 
-	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, logger.AsDebugLogger())
+	inputsResolver, err := varresolvers.NewInputsResolver(inputs, m.Inputs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve inputs: %w", err)
+	}
+	resolvedStateConfig, err := resolveStateConfig(context.Background(), m.State, stateConfigResolver(inputsResolver))
+	if err != nil {
+		return err
+	}
+	stateBackend, err := statebackends.FromManifestContext(context.Background(), resolvedStateConfig, logger.AsDebugLogger())
 	if err != nil {
 		return fmt.Errorf("failed to configure state backend: %w", err)
 	}

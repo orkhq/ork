@@ -79,8 +79,8 @@ They are available to downstream components during the same `ork up` process tha
 
 Reliable teardown assumes ambient authority on the runner.
 
-Today, `ork down` still needs the manifest to configure the state backend and runner topology. It should not rely on secret material embedded in the manifest. Runner ambient-auth checks surface this boundary by warning when the runner requires non-ambient credentials.
+Today, `ork down` still needs the manifest to locate and authenticate to the state backend, reconstruct runner connections, and establish runner provider context. It should not rely on secret material embedded in persisted state. Runner ambient-auth checks surface this boundary by warning when teardown depends on non-ambient credentials supplied through the manifest.
 
 Credential exposure warnings follow the same direction. ork warns when component environment values use keys that look like access mechanisms, such as token, secret, password, private key, credential, access-key, API-key, or known cloud credential environment variables. These warnings name only the keys, not the values.
 
-Future ork Cloud should store enough runtime metadata to tear down from persisted state and runner identity without requiring the original manifest checkout.
+The planned ork daemon and managed state backend should retain sanitized execution topology and resolve state and runner identities through the control plane, allowing service-initiated teardown without the original manifest checkout.

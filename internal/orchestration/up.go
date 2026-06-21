@@ -57,7 +57,11 @@ func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Log
 	debugLogger := logger.AsDebugLogger()
 	adapterCtx := adapters.NewAdapterContext(envID, debugLogger, emitter)
 	ctx := adapters.WithAdapterContext(context.Background(), adapterCtx)
-	stateBackend, err := statebackends.FromManifestContext(context.Background(), m.State, debugLogger)
+	resolvedStateConfig, err := resolveStateConfig(ctx, m.State, stateConfigResolver(inputsResolver))
+	if err != nil {
+		return err
+	}
+	stateBackend, err := statebackends.FromManifestContext(context.Background(), resolvedStateConfig, debugLogger)
 	if err != nil {
 		return fmt.Errorf("failed to configure state backend: %w", err)
 	}

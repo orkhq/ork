@@ -25,8 +25,10 @@ State can include operational handles, resource identifiers, adapter payloads, a
 
 Store local state outside source control. Keep object-store state private and encrypted.
 
+State backend profiles and interpolated access keys are consumed only by the ork process. Prefer profiles, ambient workload identity, or environment interpolation. Although literal access keys are accepted in `state.auth`, doing so makes the manifest a secret-bearing document and is discouraged.
+
 ## Teardown
 
-Today, `ork down` still needs the manifest so it can load the state backend and runner topology.
+Today, `ork down` still needs the manifest so it can locate and authenticate to the state backend, reconstruct runner connections, and establish runner provider context. Persisted state contains destroyable operational facts and artifacts, but deliberately does not store those credentials.
 
-Future hosted workflows may remove that manifest dependency by loading state and runner identity from a managed control plane.
+The planned ork daemon and managed state backend will keep sanitized execution topology and resolve state and runner identities through the control plane. Teardown through that service will therefore no longer require the original manifest checkout. This removes the manifest dependency without turning state into a secret store.

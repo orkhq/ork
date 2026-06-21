@@ -13,6 +13,7 @@ type Manifest struct {
 
 type StateConfig struct {
 	Backend string                 `yaml:"backend,omitempty"`
+	Auth    map[string]interface{} `yaml:"auth,omitempty"`
 	Config  map[string]interface{} `yaml:"config,omitempty"`
 }
 

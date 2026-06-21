@@ -139,12 +139,14 @@ Fields:
 - `bucket`: required
 - `prefix`: optional
 - `region`: optional; ambient AWS config may provide it
+- `endpoint`: optional custom S3-compatible endpoint
+- `force_path_style`: optional; commonly required for self-hosted services
 - `server_side_encryption`: optional, either `AES256` or `aws:kms`
 - `kms_key_id`: optional, requires `server_side_encryption: aws:kms`
 
 Unknown S3 config keys are rejected.
 
-The S3 backend uses ambient AWS authentication through the AWS SDK default config chain. In CI, prefer OIDC/federated identity over static credentials.
+The S3 backend uses ambient AWS authentication through the AWS SDK default config chain when `state.auth` is omitted. `state.auth.profile` selects a named shared-config profile for the state client only and overrides ambient AWS environment credentials without changing runner provider context. Alternatively, `state.auth.access_key_id`, `secret_access_key`, and optional `session_token` configure the state client directly; these should normally be interpolated from inputs or environment variables rather than stored as literals. State auth and config are resolved before backend construction and cannot reference component outputs. In CI, prefer OIDC/federated identity over static credentials where the selected object store supports it.
 
 S3 state buckets should be private. Because artifacts may contain Terraform state, bucket policy and encryption are part of the safety model, not nice-to-have decoration.
 

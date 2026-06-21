@@ -26,9 +26,12 @@ func FromManifestContext(ctx context.Context, cfg *manifestcore.StateConfig, log
 
 	switch backend {
 	case "local":
+		if len(cfg.Auth) > 0 {
+			return nil, fmt.Errorf("local state backend does not support auth config")
+		}
 		return NewLocalFromConfig(cfg.Config, logger)
 	case "s3":
-		return NewS3FromConfig(ctx, cfg.Config, logger)
+		return NewS3FromConfig(ctx, cfg.Config, cfg.Auth, logger)
 	default:
 		return nil, fmt.Errorf("unsupported state backend %q; supported backends: local, s3", backend)
 	}

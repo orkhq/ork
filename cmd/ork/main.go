@@ -152,17 +152,23 @@ func main() {
 			if err != nil {
 				return err
 			}
+			params, err := LoadParameters(paramsFile, cliParams)
+			if err != nil {
+				return err
+			}
 
 			return orchestration.RunStateInspect(envID, m, logger.With(
 				logging.Field{Key: "command", Value: "state inspect"},
 				logging.Field{Key: "manifest", Value: manifestPath},
-			), orchestration.StateInspectOptions{
+			), params.Merge(), orchestration.StateInspectOptions{
 				Output: stateInspectOutput,
 				Writer: os.Stdout,
 			})
 		},
 	}
 	stateInspectCmd.PersistentFlags().StringVarP(&manifestPath, "file", "f", "ork.yaml", "Path to manifest")
+	stateInspectCmd.PersistentFlags().StringArrayVar(&cliParams, "param", []string{}, "Secret in key=value format (repeatable)")
+	stateInspectCmd.PersistentFlags().StringVar(&paramsFile, "params-file", "", "Path to YAML or env params file")
 	stateInspectCmd.PersistentFlags().StringVarP(&envID, "env-id", "e", "", "Environment ID")
 	stateInspectCmd.PersistentFlags().StringVarP(&stateInspectOutput, "output", "o", "table", "Output format: table or json")
 	_ = stateInspectCmd.MarkPersistentFlagRequired("env-id")

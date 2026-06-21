@@ -190,7 +190,7 @@ For now, normal recovery paths are:
 
 ## Manifest Dependency
 
-Today, `ork down` still requires the manifest. The manifest tells ork how to load the state backend and how to reach the runners. State tells ork what components were applied and what payload/artifacts are needed for adapter teardown.
+Today, `ork down` still requires the manifest. The manifest tells ork how to locate and authenticate to the state backend, how to reach the runners, and how to establish their provider context. State tells ork what components were applied and what payload/artifacts are needed for adapter teardown.
 
 Component state stores the runner reference, not the full runner config. During `down`, ork looks up the referenced runner in the current manifest and uses that manifest runner config to connect. Component state also stores unresolved `pre_destroy` and `post_destroy` hook declarations, so teardown uses the destroy hooks that were applied with the component rather than whatever hooks happen to be in the current manifest.
 
@@ -206,4 +206,4 @@ Runner ambient-auth checks surface this boundary today. If a runner uses non-amb
 
 Future work should add drift detection without storing runner credentials in state. The likely shape is a warning-only runner fingerprint: store a canonical, sanitized fingerprint of the applied runner declaration, recompute it from the current manifest during `down`, and warn if the runner definition changed. Fingerprinting should prefer schema-aware sanitization for known runner/provider configs over broad key-name heuristics.
 
-Future ork Cloud should remove this manifest dependency for teardown by storing enough runtime metadata with the environment. In that model, teardown can run from cloud-managed state and runner identity without checking out the original manifest.
+The planned ork daemon and managed state backend should remove this manifest dependency for service-initiated teardown by retaining sanitized execution topology with the environment and resolving state and runner identities through the control plane. In that model, teardown can run without checking out the original manifest. Standalone CLI workflows may continue to use the manifest as their configuration source.

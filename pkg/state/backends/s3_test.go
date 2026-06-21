@@ -2,9 +2,14 @@ package statebackends
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"ork/pkg/logging"
@@ -44,6 +49,44 @@ func TestDecodeS3Config(t *testing.T) {
 		}
 	})
 
+	t.Run("accepts S3-compatible endpoint config", func(t *testing.T) {
+		cfg, err := decodeS3Config(map[string]interface{}{
+			"bucket":           "ork-state",
+			"region":           "us-east-1",
+			"endpoint":         "https://objects.example.com/",
+			"force_path_style": true,
+		})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cfg.Endpoint != "https://objects.example.com" {
+			t.Fatalf("endpoint = %q, want normalized endpoint", cfg.Endpoint)
+		}
+		if !cfg.ForcePathStyle {
+			t.Fatal("expected force_path_style to be enabled")
+		}
+	})
+
+	t.Run("rejects invalid endpoint", func(t *testing.T) {
+		_, err := decodeS3Config(map[string]interface{}{
+			"bucket":   "ork-state",
+			"endpoint": "objects.example.com",
+		})
+		if err == nil {
+			t.Fatal("expected error for endpoint without scheme")
+		}
+	})
+
+	t.Run("rejects credentials in endpoint", func(t *testing.T) {
+		_, err := decodeS3Config(map[string]interface{}{
+			"bucket":   "ork-state",
+			"endpoint": "https://access:secret@objects.example.com",
+		})
+		if err == nil {
+			t.Fatal("expected error for credentials in endpoint")
+		}
+	})
+
 	t.Run("kms key requires kms encryption", func(t *testing.T) {
 		_, err := decodeS3Config(map[string]interface{}{
 			"bucket":                 "ork-state",
@@ -54,6 +97,174 @@ func TestDecodeS3Config(t *testing.T) {
 			t.Fatal("expected error for kms key without aws:kms encryption")
 		}
 	})
+}
+
+func TestDecodeS3AuthConfig(t *testing.T) {
+	t.Run("defaults to ambient credentials", func(t *testing.T) {
+		cfg, err := decodeS3AuthConfig(nil)
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cfg.Profile != "" {
+			t.Fatalf("profile = %q, want empty ambient profile", cfg.Profile)
+		}
+	})
+
+	t.Run("accepts profile", func(t *testing.T) {
+		cfg, err := decodeS3AuthConfig(map[string]interface{}{"profile": " ork-minio "})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cfg.Profile != "ork-minio" {
+			t.Fatalf("profile = %q, want %q", cfg.Profile, "ork-minio")
+		}
+	})
+
+	t.Run("accepts access key credentials", func(t *testing.T) {
+		cfg, err := decodeS3AuthConfig(map[string]interface{}{
+			"access_key_id":     "minio-access",
+			"secret_access_key": "minio-secret",
+			"session_token":     "temporary-token",
+		})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cfg.AccessKeyID != "minio-access" || cfg.SecretAccessKey != "minio-secret" || cfg.SessionToken != "temporary-token" {
+			t.Fatal("decoded access key credentials do not match")
+		}
+	})
+
+	t.Run("requires complete access key credentials", func(t *testing.T) {
+		_, err := decodeS3AuthConfig(map[string]interface{}{"access_key_id": "minio-access"})
+		if err == nil {
+			t.Fatal("expected incomplete access key credentials to be rejected")
+		}
+	})
+
+	t.Run("rejects profile combined with access keys", func(t *testing.T) {
+		_, err := decodeS3AuthConfig(map[string]interface{}{
+			"profile":           "ork-minio",
+			"access_key_id":     "minio-access",
+			"secret_access_key": "minio-secret",
+		})
+		if err == nil {
+			t.Fatal("expected mixed auth sources to be rejected")
+		}
+	})
+
+	t.Run("rejects unknown auth config", func(t *testing.T) {
+		_, err := decodeS3AuthConfig(map[string]interface{}{"access_key": "do-not-allow-secrets"})
+		if err == nil {
+			t.Fatal("expected unknown auth config to be rejected")
+		}
+	})
+}
+
+func TestS3AccessKeysOverrideAmbientCredentials(t *testing.T) {
+	t.Setenv("AWS_ACCESS_KEY_ID", "real-aws-access")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "real-aws-secret")
+
+	backend, err := NewS3FromConfig(
+		context.Background(),
+		map[string]interface{}{"bucket": "ork-state", "region": "us-east-1"},
+		map[string]interface{}{
+			"access_key_id":     "minio-access",
+			"secret_access_key": "minio-secret",
+		},
+		&logging.NoopDebugLogger{},
+	)
+	if err != nil {
+		t.Fatalf("configure S3 backend: %v", err)
+	}
+	client := backend.client.(*s3.Client)
+	resolved, err := client.Options().Credentials.Retrieve(context.Background())
+	if err != nil {
+		t.Fatalf("retrieve access key credentials: %v", err)
+	}
+	if resolved.AccessKeyID != "minio-access" {
+		t.Fatalf("access key = %q, want explicit state credentials", resolved.AccessKeyID)
+	}
+}
+
+func TestS3ProfileOverridesAmbientCredentials(t *testing.T) {
+	credentialsPath := filepath.Join(t.TempDir(), "credentials")
+	credentialsFile := "[ork-minio]\naws_access_key_id = minio-access\naws_secret_access_key = minio-secret\n"
+	if err := os.WriteFile(credentialsPath, []byte(credentialsFile), 0600); err != nil {
+		t.Fatalf("write credentials file: %v", err)
+	}
+	t.Setenv("AWS_SHARED_CREDENTIALS_FILE", credentialsPath)
+	t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "missing-config"))
+	t.Setenv("AWS_ACCESS_KEY_ID", "real-aws-access")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "real-aws-secret")
+
+	backend, err := NewS3FromConfig(
+		context.Background(),
+		map[string]interface{}{"bucket": "ork-state", "region": "us-east-1"},
+		map[string]interface{}{"profile": "ork-minio"},
+		&logging.NoopDebugLogger{},
+	)
+	if err != nil {
+		t.Fatalf("configure S3 backend: %v", err)
+	}
+	client, ok := backend.client.(*s3.Client)
+	if !ok {
+		t.Fatalf("client = %T, want *s3.Client", backend.client)
+	}
+	credentials, err := client.Options().Credentials.Retrieve(context.Background())
+	if err != nil {
+		t.Fatalf("retrieve profile credentials: %v", err)
+	}
+	if credentials.AccessKeyID != "minio-access" {
+		t.Fatalf("access key = %q, want selected profile credentials", credentials.AccessKeyID)
+	}
+}
+
+func TestNewS3ClientConfiguresCompatibleStorage(t *testing.T) {
+	client := newS3Client(aws.Config{Region: "us-east-1"}, S3Config{
+		Endpoint:       "https://objects.example.com",
+		ForcePathStyle: true,
+	})
+	options := client.Options()
+
+	if got := aws.ToString(options.BaseEndpoint); got != "https://objects.example.com" {
+		t.Fatalf("base endpoint = %q, want %q", got, "https://objects.example.com")
+	}
+	if !options.UsePathStyle {
+		t.Fatal("expected path-style addressing to be enabled")
+	}
+}
+
+func TestS3CompatibleEndpointReceivesPathStyleRequest(t *testing.T) {
+	var gotPath string
+	var gotAuthorization string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuthorization = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := S3Config{
+		Bucket:         "ork-state",
+		Prefix:         "previews",
+		Endpoint:       server.URL,
+		ForcePathStyle: true,
+	}
+	client := newS3Client(aws.Config{
+		Region:      "us-east-1",
+		Credentials: credentials.NewStaticCredentialsProvider("access", "secret", ""),
+	}, cfg)
+	backend := NewS3(client, cfg, &logging.NoopDebugLogger{})
+
+	if err := backend.Save(context.Background(), "pr-123", &state.OrkState{}); err != nil {
+		t.Fatalf("save through compatible endpoint failed: %v", err)
+	}
+	if gotPath != "/ork-state/previews/pr-123/state.json" {
+		t.Fatalf("request path = %q, want path-style bucket and state key", gotPath)
+	}
+	if gotAuthorization == "" {
+		t.Fatal("expected request to use AWS signature authentication")
+	}
 }
 
 func TestS3KeyLayout(t *testing.T) {
