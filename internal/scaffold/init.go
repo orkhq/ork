@@ -14,12 +14,14 @@ import (
 //go:embed templates/starter.ork.yaml
 var templatesFS embed.FS
 
+// InitOptions controls starter-manifest creation.
 type InitOptions struct {
 	Path  string
 	ID    string
 	Force bool
 }
 
+// RunInit writes a starter manifest and refuses replacement unless forced.
 func RunInit(options InitOptions) error {
 	if options.Path == "" {
 		options.Path = "ork.yaml"

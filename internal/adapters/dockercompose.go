@@ -17,7 +17,10 @@ import (
 	"ork/pkg/utils"
 )
 
+// DockerComposeAdapter manages one Compose project per Ork environment component.
 type DockerComposeAdapter struct{}
+
+// DockerComposeConfig configures native Docker Compose behavior.
 type DockerComposeConfig struct {
 	Flags []string `mapstructure:"flags"`
 	// Optional custom runner command, e.g., "docker compose" or "docker-compose"
@@ -27,6 +30,7 @@ type DockerComposeConfig struct {
 	Files    []string
 }
 
+// DockerComposeState preserves the project identity required for teardown.
 type DockerComposeState struct {
 	Command      []string          `mapstructure:"command" json:"command"`
 	ComposeFiles []string          `mapstructure:"compose_files" json:"compose_files"`

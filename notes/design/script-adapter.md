@@ -1,4 +1,4 @@
-# Script component
+# Script adapter
 
 The `script` adapter runs a shell command on a runner and captures declared outputs for later interpolation.
 

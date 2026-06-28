@@ -15,6 +15,8 @@ import (
 	"ork/pkg/varresolvers"
 )
 
+// RunDown restores recorded artifacts and destroys components in reverse state
+// order, saving progress after each lifecycle checkpoint.
 func RunDown(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	fmt.Printf("Tearing down sandbox: %s\n", envID)
 

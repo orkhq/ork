@@ -6,8 +6,10 @@ import (
 	"os"
 )
 
+// EnvResolver resolves an expression as an operating-system environment name.
 type EnvResolver struct{}
 
+// NewEnvResolver creates an environment resolver.
 func NewEnvResolver() *EnvResolver {
 	return &EnvResolver{}
 }

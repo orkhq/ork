@@ -46,12 +46,8 @@ bin/
 # Local markdown notes
 *.md
 !README.md
+!CONTRIBUTING.md
+!SECURITY.md
 !docs/**/*.md
 !docs/**/*.mdx
-!md/lifecycle-hooks.md
-!md/apply-policy.md
-!md/open-source-readiness.md
-!md/security.md
-!md/script-component.md
-!md/state-backends.md
-!md/state-recovery.md
+!notes/**/*.md

@@ -12,6 +12,7 @@ import (
 	"ork/pkg/utils"
 )
 
+// LocalRunner executes component operations on the machine running Ork.
 type LocalRunner struct {
 	name string
 	env  map[string]string

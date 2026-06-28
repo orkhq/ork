@@ -10,6 +10,8 @@ import (
 
 const AdapterContextKey = "__adapter.context"
 
+// AdapterContext carries environment-scoped paths, events, and diagnostics into
+// adapter operations without expanding the public Adapter method signatures.
 type AdapterContext struct {
 	envID   string
 	logger  logging.DebugLogger
@@ -28,6 +30,7 @@ func (a AdapterContext) BuildRunnerWorkDir(baseWorkDir, componentName string) st
 	return path.Join(baseWorkDir, "ork", a.envID, componentName)
 }
 
+// NewAdapterContext creates context shared by adapters in one environment run.
 func NewAdapterContext(id string, logger logging.DebugLogger, emitter events.Emitter) AdapterContext {
 	return AdapterContext{
 		envID:   id,
@@ -36,10 +39,12 @@ func NewAdapterContext(id string, logger logging.DebugLogger, emitter events.Emi
 	}
 }
 
+// WithAdapterContext attaches adapter lifecycle context to ctx.
 func WithAdapterContext(ctx context.Context, aCtx AdapterContext) context.Context {
 	return context.WithValue(ctx, AdapterContextKey, aCtx)
 }
 
+// AdapterContextFromContext retrieves adapter lifecycle context from ctx.
 func AdapterContextFromContext(ctx context.Context) (AdapterContext, bool) {
 	aCtx, ok := ctx.Value(AdapterContextKey).(AdapterContext)
 	return aCtx, ok

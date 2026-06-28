@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// PrefixWriter adds a runner/component prefix to each complete output line.
 type PrefixWriter struct {
 	w           io.Writer
 	prefix      string
@@ -12,6 +13,7 @@ type PrefixWriter struct {
 	atLineStart bool
 }
 
+// NewPrefixWriter wraps w with line-oriented prefixing.
 func NewPrefixWriter(w io.Writer, prefix string) *PrefixWriter {
 	return &PrefixWriter{
 		w:           w,

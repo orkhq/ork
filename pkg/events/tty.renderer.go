@@ -6,8 +6,10 @@ import (
 	"time"
 )
 
+// TTYRenderer presents concise, human-readable lifecycle progress.
 type TTYRenderer struct{}
 
+// NewTTYRenderer creates an interactive terminal renderer.
 func NewTTYRenderer() *TTYRenderer {
 	return &TTYRenderer{}
 }

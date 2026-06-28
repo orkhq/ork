@@ -96,13 +96,13 @@ Example:
 
 ```yaml
 components:
-  - name: db
+  db:
     outputs:
       - name: url
       - name: password
         sensitive: true
 
-  - name: api
+  api:
     env:
       DATABASE_URL: "${db.outputs.url}"
       DATABASE_PASSWORD: "${db.outputs.password}"
@@ -181,7 +181,7 @@ A future manifest field could allow best-effort components:
 
 ```yaml
 components:
-  - name: metrics
+  metrics:
     required: false
 ```
 

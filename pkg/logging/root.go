@@ -2,6 +2,7 @@ package logging
 
 import "go.uber.org/zap"
 
+// NewRootZapLogger creates the process-level logger used by the CLI.
 func NewRootZapLogger(isTTY bool, debug bool) (*zap.Logger, error) {
 	cfg := zap.NewProductionConfig()
 

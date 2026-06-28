@@ -1,4 +1,4 @@
-# ork Docs
+# ork docs
 
 This is the public documentation site for ork, built with Astro Starlight.
 
@@ -17,4 +17,4 @@ npm run dev
 npm run build
 ```
 
-The root `md/` directory contains working notes and design docs. Public docs should live here under `docs/src/content/docs`.
+The root [`notes/`](../notes/) directory contains indexed contributor design notes. Public user documentation belongs under `docs/src/content/docs`.

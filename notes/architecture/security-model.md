@@ -1,4 +1,4 @@
-# Security
+# Security model
 
 ork is an orchestration tool that executes commands, copies files, persists operational state, and talks to remote runners. Treat its configuration and state with the same care as other infrastructure automation systems.
 

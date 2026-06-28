@@ -2,6 +2,8 @@ package state
 
 import "context"
 
+// Backend persists one environment state document and its adapter-declared
+// artifacts. Implementations must scope all keys and deletion to envID.
 type Backend interface {
 	Load(ctx context.Context, envID string) (*OrkState, error)
 	Save(ctx context.Context, envID string, state *OrkState) error

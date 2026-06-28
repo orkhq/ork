@@ -22,6 +22,7 @@ type job struct {
 	a *adapters.Adapter
 }
 
+// UpOptions controls behavior for components already present in state.
 type UpOptions struct {
 	Reapply bool
 }
@@ -33,10 +34,13 @@ const (
 	existingComponentSkip  existingComponentAction = "skip"
 )
 
+// RunUp applies an environment using the conservative default recovery policy.
 func RunUp(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string) error {
 	return RunUpWithOptions(envID, m, logger, inputs, UpOptions{})
 }
 
+// RunUpWithOptions resolves state and runners, then applies components in
+// dependency order while persisting recovery checkpoints.
 func RunUpWithOptions(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string, options UpOptions) error {
 	componentResolver := varresolvers.NewComponentResolver()
 	inputsResolver, err := varresolvers.NewInputsResolver(inputs, m.Inputs)

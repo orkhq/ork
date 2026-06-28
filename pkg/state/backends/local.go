@@ -12,15 +12,18 @@ import (
 	"ork/pkg/state"
 )
 
+// LocalConfig configures filesystem-backed state persistence.
 type LocalConfig struct {
 	Path string `mapstructure:"path"`
 }
 
+// Local stores one directory per environment on the Ork machine.
 type Local struct {
 	root   string
 	logger logging.DebugLogger
 }
 
+// NewLocalFromConfig strictly decodes manifest backend configuration.
 func NewLocalFromConfig(config map[string]interface{}, logger logging.DebugLogger) (*Local, error) {
 	var cfg LocalConfig
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
@@ -38,6 +41,7 @@ func NewLocalFromConfig(config map[string]interface{}, logger logging.DebugLogge
 	return NewLocal(cfg.Path, logger), nil
 }
 
+// NewLocal creates a local backend, defaulting an empty root to .ork.
 func NewLocal(root string, logger logging.DebugLogger) *Local {
 	if root == "" {
 		root = ".ork"

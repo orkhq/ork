@@ -8,6 +8,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ParametersSource keeps file and CLI values separate until precedence is
+// applied. CLI parameters override values loaded from a file.
 type ParametersSource struct {
 	FileParameters map[string]string
 	CLIParameters  map[string]string
@@ -25,6 +27,7 @@ func (s *ParametersSource) Merge() map[string]string {
 	return merged
 }
 
+// LoadParametersFile reads YAML or env-style manifest parameters.
 func LoadParametersFile(filePath string) (map[string]string, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -56,6 +59,7 @@ func LoadParametersFile(filePath string) (map[string]string, error) {
 	return parameters, nil
 }
 
+// ParseCLIParameters parses repeated key=value command-line parameters.
 func ParseCLIParameters(cliParameters []string) (map[string]string, error) {
 	parsed := make(map[string]string)
 	for _, s := range cliParameters {
@@ -68,6 +72,7 @@ func ParseCLIParameters(cliParameters []string) (map[string]string, error) {
 	return parsed, nil
 }
 
+// LoadParameters loads both parameter sources without logging their values.
 func LoadParameters(parametersFile string, cliParameters []string) (*ParametersSource, error) {
 	var parsedFileParameters map[string]string
 	var err error

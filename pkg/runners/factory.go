@@ -7,6 +7,7 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// FromManifest decodes one manifest runner without connecting it.
 func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {
 	env, _, err := RetrieveProviderConfigForRunner(mr.Providers)
 	if err != nil {
@@ -28,6 +29,8 @@ func FromManifest(name string, mr manifestcore.RunnerManifest) (Runner, error) {
 	}
 }
 
+// FromManifestRunnersMap creates and initializes all declared runners. Callers
+// are responsible for disconnecting successfully initialized runners.
 func FromManifestRunnersMap(runnersMap map[string]manifestcore.RunnerManifest) (map[string]Runner, error) {
 	runners := make(map[string]Runner)
 	for name, mt := range runnersMap {

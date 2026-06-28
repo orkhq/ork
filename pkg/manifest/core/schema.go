@@ -2,6 +2,7 @@ package manifestcore
 
 import "fmt"
 
+// Manifest is the canonical representation consumed by orchestration.
 type Manifest struct {
 	Version    string                    `yaml:"version"`
 	Inputs     map[string]Input          `yaml:"inputs,omitempty"`
@@ -11,12 +12,15 @@ type Manifest struct {
 	Components []Component               `yaml:"components"`
 }
 
+// StateConfig selects control-plane persistence and its independent
+// authentication context.
 type StateConfig struct {
 	Backend string                 `yaml:"backend,omitempty"`
 	Auth    map[string]interface{} `yaml:"auth,omitempty"`
 	Config  map[string]interface{} `yaml:"config,omitempty"`
 }
 
+// Input declares a parameter accepted during manifest resolution.
 type Input struct {
 	Description string `yaml:"description"`
 	Type        string `yaml:"type"`
@@ -25,6 +29,7 @@ type Input struct {
 	Required    bool   `yaml:"required,omitempty"`
 }
 
+// Metadata identifies a manifest and its human ownership information.
 type Metadata struct {
 	ID          string            `yaml:"id"`
 	Description string            `yaml:"description"`
@@ -32,11 +37,13 @@ type Metadata struct {
 	Labels      map[string]string `yaml:"labels,omitempty"`
 }
 
+// Owner records the person or team responsible for a manifest.
 type Owner struct {
 	Name  string `yaml:"name"`
 	Email string `yaml:"email"`
 }
 
+// RunnerManifest declares an execution target and optional provider bootstrap.
 type RunnerManifest struct {
 	Type   string
 	Config map[string]interface{} `yaml:"config"`
@@ -45,14 +52,17 @@ type RunnerManifest struct {
 	Providers map[string]interface{} `yaml:"providers,omitempty"`
 }
 
+// ComponentType is the manifest-level adapter identifier.
 type ComponentType string
 
+// Hook is a shell command executed around an adapter lifecycle operation.
 type Hook struct {
 	Command string            `yaml:"command"`
 	Shell   []string          `yaml:"shell,omitempty"`
 	Env     map[string]string `yaml:"env,omitempty"`
 }
 
+// Hooks groups commands by component lifecycle phase.
 type Hooks struct {
 	PreApply    []Hook `yaml:"pre_apply,omitempty"`
 	PostApply   []Hook `yaml:"post_apply,omitempty"`
@@ -72,6 +82,7 @@ func (h Hooks) HasAny() bool {
 	return h.HasApplyHooks() || h.HasDestroyHooks()
 }
 
+// ComponentSource selects exactly one way to stage adapter source.
 type ComponentSource struct {
 	// Embedded allows embedding raw string content directly in the manifest.
 	Embedded string `yaml:"embedded,omitempty" json:"embedded,omitempty"`
@@ -81,6 +92,7 @@ type ComponentSource struct {
 	Files map[string]string `yaml:"files,omitempty" json:"files,omitempty"`
 }
 
+// Validate rejects sources that select more than one source mode.
 func (c ComponentSource) Validate() (bool, error) {
 	count := 0
 	if c.Embedded != "" {
@@ -99,6 +111,7 @@ func (c ComponentSource) Validate() (bool, error) {
 	return true, nil
 }
 
+// ComponentSourceType identifies the selected source representation.
 type ComponentSourceType string
 
 const (
@@ -108,6 +121,7 @@ const (
 	ComponentSourceTypeNone     ComponentSourceType = "none"
 )
 
+// Type returns the source representation selected by the manifest.
 func (c ComponentSource) Type() ComponentSourceType {
 	if c.Embedded != "" {
 		return ComponentSourceTypeEmbedded
@@ -121,6 +135,7 @@ func (c ComponentSource) Type() ComponentSourceType {
 	return ComponentSourceTypeNone
 }
 
+// Output declares a component value available for downstream interpolation.
 type Output struct {
 	Name      string `yaml:"name"`
 	Required  *bool  `yaml:"required,omitempty"`
@@ -128,10 +143,13 @@ type Output struct {
 	Type      string `yaml:"type,omitempty"`
 }
 
+// IsRequired reports whether apply must produce this output. Outputs default to
+// required when the manifest omits the field.
 func (o Output) IsRequired() bool {
 	return o.Required == nil || *o.Required
 }
 
+// Component is one node in the environment dependency graph.
 type Component struct {
 	Name      string                 `yaml:"name"`
 	Type      string                 `yaml:"type"`

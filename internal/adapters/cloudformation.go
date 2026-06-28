@@ -17,8 +17,11 @@ import (
 	"ork/pkg/utils"
 )
 
+// CloudFormationAdapter is the early AWS CloudFormation component adapter.
+// Its contract should not be treated as feature-complete yet.
 type CloudFormationAdapter struct{}
 
+// CloudFormationConfig configures stack identity and template parameters.
 type CloudFormationConfig struct {
 	StackName    string            `mapstructure:"stack_name"`
 	Region       string            `mapstructure:"region"`
@@ -30,6 +33,7 @@ type CloudFormationConfig struct {
 	TemplatePath string
 }
 
+// CloudFormationState preserves the stack identity required for teardown.
 type CloudFormationState struct {
 	Region       string `mapstructure:"region" json:"region,omitempty"`
 	StackName    string `mapstructure:"stack_name" json:"stack_name"`

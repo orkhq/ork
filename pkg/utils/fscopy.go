@@ -7,17 +7,20 @@ import (
 	"time"
 )
 
+// FSCopyResult reports aggregate transfer metrics.
 type FSCopyResult struct {
 	TotalBytes int64
 	TotalFiles int
 	Duration   time.Duration
 }
 
+// FSCopyOptions controls recursive and overwrite behavior.
 type FSCopyOptions struct {
 	Recursive bool
 	Overwrite bool
 }
 
+// FSCopy copies one file or directory tree between filesystem implementations.
 func FSCopy(from, to FSWithPath, opts FSCopyOptions) (FSCopyResult, error) {
 
 	totalBytes := int64(0)

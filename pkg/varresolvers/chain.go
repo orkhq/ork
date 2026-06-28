@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// ChainResolver tries resolvers in order until one recognizes an expression.
 type ChainResolver struct {
 	Resolvers []Resolver
 }

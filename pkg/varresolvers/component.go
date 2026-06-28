@@ -10,12 +10,15 @@ import (
 	manifestcore "ork/pkg/manifest/core"
 )
 
+// ComponentResolver stores fresh and persisted component outputs for lifecycle
+// interpolation. It is safe for concurrent registration and lookup.
 type ComponentResolver struct {
 	outputs                        map[string]string // componentName.outputs.outputName -> value
 	unavailableSensitiveOutputRefs map[string]struct{}
 	mutex                          sync.RWMutex // thread-safe for concurrent component execution
 }
 
+// NewComponentResolver creates an empty component-output resolver.
 func NewComponentResolver() *ComponentResolver {
 	return &ComponentResolver{
 		outputs:                        make(map[string]string),

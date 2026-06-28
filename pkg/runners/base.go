@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// RunnerType identifies an execution transport recorded in component state.
 type RunnerType string
 
 const (
@@ -14,6 +15,8 @@ const (
 	RunnerTypeLocal RunnerType = "local"
 )
 
+// Capabilities describes operations a runner can perform. Adapters declare
+// their requirements before lifecycle execution begins.
 type Capabilities struct {
 	Exec     bool // Ability to execute shell-like commands
 	FileCopy bool // Ability to copy files to/from the runner
@@ -43,6 +46,9 @@ func (c Capabilities) SatisfiedBy(r Capabilities) bool {
 	return true
 }
 
+// ExecCommand describes a process invocation inside a runner context.
+// Command and Env may contain sensitive values and must not be logged by
+// runner implementations.
 type ExecCommand struct {
 	Command    []string          // command and args
 	WorkingDir string            // optional working directory
@@ -53,6 +59,7 @@ type ExecCommand struct {
 	Timeout    time.Duration     // optional timeout
 }
 
+// ExecResult captures process outcome separately from transport-level errors.
 type ExecResult struct {
 	ExitCode int           // exit code of the process
 	Error    error         // transport or execution error
@@ -61,6 +68,7 @@ type ExecResult struct {
 	Duration time.Duration // execution time
 }
 
+// FileCopyRequest describes a transfer between the Ork machine and a runner.
 type FileCopyRequest struct {
 	Source      string // local or host-side path
 	Destination string // runner-side path
@@ -69,6 +77,7 @@ type FileCopyRequest struct {
 	Overwrite   bool   // overwrite existing files
 }
 
+// FileCopyResult reports transfer metrics and any runner-reported error.
 type FileCopyResult struct {
 	CopiedFiles int           // number of files copied
 	Bytes       int64         // total bytes copied
@@ -76,6 +85,8 @@ type FileCopyResult struct {
 	Error       error         // transport error, not semantic failure
 }
 
+// Runner is the execution and file-transfer boundary for a component. Provider
+// environment and network location are scoped to the runner implementation.
 type Runner interface {
 	Name() string
 	Type() RunnerType

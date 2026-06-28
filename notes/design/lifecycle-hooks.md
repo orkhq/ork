@@ -8,7 +8,7 @@ Hooks are configured on a component:
 
 ```yaml
 components:
-  - name: api
+  api:
     type: docker-compose
     runner: local
     depends_on:

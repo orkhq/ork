@@ -8,6 +8,7 @@ type zapLogger struct {
 	l *zap.Logger
 }
 
+// NewZapLogger wraps a zap logger behind Ork's logging interface.
 func NewZapLogger(l *zap.Logger) Logger {
 	return &zapLogger{l: l}
 }

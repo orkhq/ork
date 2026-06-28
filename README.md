@@ -1,5 +1,5 @@
 # ork
-[![CLI](https://github.com/orkhq/ork/actions/workflows/cli.yml/badge.svg)](https://github.com/orkhq/ork/actions/workflows/cli.yml) 
+[![CLI](https://github.com/orkhq/ork/actions/workflows/cli.yml/badge.svg)](https://github.com/orkhq/ork/actions/workflows/cli.yml)
 
 ork is an alpha-stage orchestration tool for ephemeral preview, test, and development environments.
 
@@ -13,9 +13,9 @@ Current areas of focus:
 
 - state-driven teardown and recovery
 - local and remote runners
-- script, Docker Compose, Terraform, and CloudFormation components
+- script, Docker Compose, Terraform, and early CloudFormation components
 - lifecycle hooks and component outputs
-- state backend support for local files and S3
+- state backend support for local files, AWS S3, and S3-compatible object stores
 - safer handling of credentials, state, and sensitive outputs
 
 ## Quickstart
@@ -77,7 +77,7 @@ After a successful `down`, ork deletes the environment state bundle.
 
 ## Documentation
 
-The public documentation lives in `docs/` and is built with Astro Starlight.
+The public documentation lives in [`docs/`](docs/) and is built with Astro Starlight. Implementation contracts and architectural decisions are indexed in [`notes/README.md`](notes/README.md).
 
 ```sh
 cd docs
@@ -94,6 +94,12 @@ go test ./...
 ```
 
 Smoke tests live in `tests/`. Some require local tools or cloud credentials and are opt-in.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development expectations, lifecycle review guidance, and documentation rules.
+
+## Security
+
+ork executes local and remote commands and persists operational state. Read [SECURITY.md](SECURITY.md) before using it with infrastructure credentials, and report suspected vulnerabilities privately.
 
 ## License
 

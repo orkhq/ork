@@ -14,11 +14,14 @@ import (
 	"ork/pkg/varresolvers"
 )
 
+// StateInspectOptions controls state presentation and destination.
 type StateInspectOptions struct {
 	Output string
 	Writer io.Writer
 }
 
+// RunStateInspect resolves the state backend and renders persisted lifecycle
+// metadata without exposing outputs, payloads, or artifact contents in tables.
 func RunStateInspect(envID string, m *manifestcore.Manifest, logger logging.Logger, inputs map[string]string, options StateInspectOptions) error {
 	writer := options.Writer
 	if writer == nil {

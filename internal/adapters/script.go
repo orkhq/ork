@@ -20,12 +20,16 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 )
 
+// ScriptAdapter stages and executes shell scripts, then captures declared output
+// files. Teardown commands belong in component destroy hooks.
 type ScriptAdapter struct{}
 
+// ScriptConfig selects the command prefix used to execute staged script files.
 type ScriptConfig struct {
 	Shell []string `mapstructure:"shell"`
 }
 
+// ScriptState records staged execution details for inspection and recovery.
 type ScriptState struct {
 	Scripts []string `mapstructure:"scripts" json:"scripts"`
 	Shell   []string `mapstructure:"shell" json:"shell"`

@@ -8,6 +8,7 @@ var (
 	BuildDate = "unknown"
 )
 
+// String returns a human-readable build version.
 func String() string {
 	return fmt.Sprintf("ork %s (commit: %s, built: %s)", Version, Commit, BuildDate)
 }

@@ -7,16 +7,19 @@ import (
 	"github.com/pkg/sftp"
 )
 
+// FileWriter is the write side of a filesystem used by FSCopy.
 type FileWriter interface {
 	io.Writer
 	io.Closer
 }
 
+// FileReader is the read side of a filesystem used by FSCopy.
 type FileReader interface {
 	io.Reader
 	io.Closer
 }
 
+// FileInfo exposes the metadata FSCopy needs without binding to os.FileInfo.
 type FileInfo interface {
 	Name() string
 	IsDir() bool
@@ -24,6 +27,7 @@ type FileInfo interface {
 	Mode() os.FileMode
 }
 
+// FS is the minimal filesystem contract shared by local and SFTP copies.
 type FS interface {
 	Stat(path string) (os.FileInfo, error)
 	IsDir(path string) (bool, error)
@@ -34,6 +38,7 @@ type FS interface {
 }
 
 // LocalFS implements FS interface for local filesystem
+// LocalFS implements FS against the local operating-system filesystem.
 type LocalFS struct{}
 
 func (l *LocalFS) Stat(path string) (os.FileInfo, error) {
@@ -77,6 +82,7 @@ func (l *LocalFS) MkdirAll(path string) error {
 }
 
 // SFTPFS implements FS interface for SFTP filesystem
+// SFTPFS implements FS using an initialized SFTP client.
 type SFTPFS struct {
 	SftpClient *sftp.Client
 }
@@ -122,6 +128,7 @@ func (s *SFTPFS) MkdirAll(path string) error {
 	return s.SftpClient.MkdirAll(path)
 }
 
+// FSWithPath pairs a filesystem implementation with a source or destination.
 type FSWithPath struct {
 	FS   FS
 	Path string

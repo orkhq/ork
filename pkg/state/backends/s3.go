@@ -23,6 +23,7 @@ import (
 	"ork/pkg/state"
 )
 
+// S3Config configures AWS S3 or an S3-compatible object store.
 type S3Config struct {
 	Bucket               string `mapstructure:"bucket"`
 	Prefix               string `mapstructure:"prefix"`
@@ -33,6 +34,8 @@ type S3Config struct {
 	KMSKeyID             string `mapstructure:"kms_key_id"`
 }
 
+// S3AuthConfig selects either a shared profile or explicit SigV4 credentials.
+// Explicit values should normally arrive through manifest interpolation.
 type S3AuthConfig struct {
 	Profile         string `mapstructure:"profile"`
 	AccessKeyID     string `mapstructure:"access_key_id"`
@@ -48,6 +51,7 @@ type s3Client interface {
 	DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
 }
 
+// S3 stores state and artifacts under a bucket prefix using the S3 API.
 type S3 struct {
 	client               s3Client
 	bucket               string
@@ -57,6 +61,8 @@ type S3 struct {
 	logger               logging.DebugLogger
 }
 
+// NewS3FromConfig strictly decodes backend and authentication configuration,
+// then constructs an SDK client whose credentials are scoped to state access.
 func NewS3FromConfig(ctx context.Context, rawConfig map[string]interface{}, rawAuth map[string]interface{}, logger logging.DebugLogger) (*S3, error) {
 	cfg, err := decodeS3Config(rawConfig)
 	if err != nil {
@@ -126,6 +132,8 @@ func newS3Client(awsCfg aws.Config, cfg S3Config) *s3.Client {
 	})
 }
 
+// NewS3 creates a backend around an existing client. It is primarily useful for
+// tests and alternate client construction within this package.
 func NewS3(client s3Client, cfg S3Config, logger logging.DebugLogger) *S3 {
 	return &S3{
 		client:               client,

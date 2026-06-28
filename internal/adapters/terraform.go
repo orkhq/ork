@@ -26,8 +26,11 @@ import (
 	"ork/pkg/utils"
 )
 
+// TerraformAdapter runs Terraform from staged source and preserves local tool
+// state artifacts required for later destroy.
 type TerraformAdapter struct{}
 
+// TerraformConfig configures Terraform CLI initialization and apply behavior.
 type TerraformConfig struct {
 	Vars map[string]string `mapstructure:"vars"`
 
@@ -38,6 +41,7 @@ type TerraformConfig struct {
 	BackendType    string
 }
 
+// TerraformState records the staged module and backend facts used by teardown.
 type TerraformState struct {
 	Vars    map[string]string `mapstructure:"vars" json:"vars"`
 	WorkDir string            `mapstructure:"workdir" json:"workdir"`

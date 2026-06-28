@@ -6,12 +6,15 @@ import (
 	"regexp"
 )
 
+// Resolver maps one interpolation expression to its string value.
 type Resolver interface {
 	Resolve(ctx context.Context, path string) (string, error)
 }
 
 var re = regexp.MustCompile(`\$\{([^}]+)}`)
 
+// InterpolateString replaces every ${...} expression using resolver and returns
+// the first resolution error without silently dropping the original reference.
 func InterpolateString(ctx context.Context, s string, resolver Resolver) (string, error) {
 	var firstErr error
 	out := re.ReplaceAllStringFunc(s, func(match string) string {
@@ -71,6 +74,8 @@ func deepInterpolateValue(
 	}
 }
 
+// DeepInterpolate recursively resolves string values in a map while preserving
+// non-string values and leaving the input map unchanged.
 func DeepInterpolate(
 	ctx context.Context,
 	in map[string]interface{},

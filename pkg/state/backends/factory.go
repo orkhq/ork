@@ -9,10 +9,13 @@ import (
 	"ork/pkg/state"
 )
 
+// FromManifest constructs a backend with a background context and no-op logger.
 func FromManifest(cfg *manifestcore.StateConfig) (state.Backend, error) {
 	return FromManifestContext(context.Background(), cfg, &logging.NoopDebugLogger{})
 }
 
+// FromManifestContext constructs and validates the backend selected by cfg. A
+// nil config selects local state at .ork.
 func FromManifestContext(ctx context.Context, cfg *manifestcore.StateConfig, logger logging.DebugLogger) (state.Backend, error) {
 	logger = normalizeLogger(logger)
 	if cfg == nil {

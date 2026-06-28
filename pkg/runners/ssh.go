@@ -18,6 +18,8 @@ import (
 	"ork/pkg/utils"
 )
 
+// SSHRunnerConfig configures transport authentication and host verification for
+// a remote execution target.
 type SSHRunnerConfig struct {
 	Host string `yaml:"host" mapstructure:"host"`
 	Port int    `yaml:"port" mapstructure:"port"`
@@ -30,11 +32,14 @@ type SSHRunnerConfig struct {
 	HostKey SSHHostKeyConfig `yaml:"host_key" mapstructure:"host_key"`
 }
 
+// SSHHostKeyConfig requires either a known-hosts file or an explicit insecure
+// opt-out suitable only for disposable development targets.
 type SSHHostKeyConfig struct {
 	KnownHosts string `yaml:"known_hosts,omitempty" mapstructure:"known_hosts"`
 	Insecure   bool   `yaml:"insecure,omitempty" mapstructure:"insecure"`
 }
 
+// SSHRunner executes commands over SSH and transfers files over SFTP.
 type SSHRunner struct {
 	name   string
 	config SSHRunnerConfig

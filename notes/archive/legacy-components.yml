@@ -1,3 +1,6 @@
+# ARCHIVED: this component sketch does not match the current ork/1.0 parser.
+# See pkg/manifest/core/schema.go and the public manifest reference.
+
 components:
   - name: string                     # Unique name for the component
     type: string                     # Adapter type (e.g. terraform, docker_compose, aws_s3_bucket)

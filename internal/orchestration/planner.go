@@ -9,6 +9,8 @@ import (
 
 // TopologicallySortComponents sorts the given components based on their dependencies
 // and returns the planned operations in order.
+// TopologicallySortComponents validates dependencies and returns components in
+// apply order. Teardown uses the reverse of recorded apply order.
 func TopologicallySortComponents(
 	elements []manifestcore.Component,
 ) ([]*manifestcore.Component, error) {

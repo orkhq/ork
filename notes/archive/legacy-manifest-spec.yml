@@ -1,3 +1,6 @@
+# ARCHIVED: this proposal contains unsupported fields and component types.
+# It is retained for historical context only, not as a valid ork manifest.
+
 version: "ork/1.0" # ORK manifest specification version
 
 # ------------------------------------------------------------------------------

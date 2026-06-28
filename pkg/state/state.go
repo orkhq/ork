@@ -12,6 +12,8 @@ import (
 	"ork/pkg/runners"
 )
 
+// Status records Ork's durable belief about a component lifecycle outcome.
+// It does not imply that no resources exist after a failure.
 type Status string
 
 const (
@@ -22,6 +24,7 @@ const (
 	StatusDestroyed  Status = "destroyed"
 )
 
+// Stage identifies the lifecycle checkpoint associated with a component status.
 type Stage string
 
 const (
@@ -36,6 +39,8 @@ const (
 	StagePostDestroy Stage = "post_destroy"
 )
 
+// IsDestroyStage reports whether retry must continue through ork down rather
+// than ork up.
 func (s Stage) IsDestroyStage() bool {
 	switch s {
 	case StagePreDestroy, StageDestroy, StagePostDestroy:
@@ -51,12 +56,16 @@ type RunnerRef struct {
 	Type runners.RunnerType `json:"type"`
 }
 
+// ComponentStateData is adapter-owned operational data returned after apply.
+// Payload must not contain secrets; Artifacts are persisted separately.
 type ComponentStateData struct {
 	WorkDir   string                 `json:"workdir"`
 	Payload   map[string]interface{} `json:"payload,omitempty"`
 	Artifacts []Artifact             `json:"artifacts,omitempty"`
 }
 
+// Artifact describes a tool-state file that must survive until teardown.
+// Path is relative to the component work directory.
 type Artifact struct {
 	Name      string `json:"name"`
 	Path      string `json:"path"`
@@ -64,12 +73,14 @@ type Artifact struct {
 	Sensitive bool   `json:"sensitive,omitempty"`
 }
 
+// DestroyHooks preserves the hooks that belonged to the applied component so a
+// later manifest edit cannot silently replace its teardown contract.
 type DestroyHooks struct {
 	PreDestroy  []manifestcore.Hook `json:"pre_destroy,omitempty"`
 	PostDestroy []manifestcore.Hook `json:"post_destroy,omitempty"`
 }
 
-// ComponentState represents the state of a single provisioned component
+// ComponentState represents the durable lifecycle state of one component.
 type ComponentState struct {
 	Name               string                       `json:"name"`
 	Type               string                       `json:"type"`
@@ -88,7 +99,7 @@ type ComponentState struct {
 	Env                map[string]string            `json:"-"`
 }
 
-// OrkState represents the state of an entire ork environment
+// OrkState represents the durable state of an entire Ork environment.
 type OrkState struct {
 	EnvID      string           `json:"env_id"`
 	ManifestID string           `json:"manifest_id"`
@@ -99,16 +110,19 @@ type OrkState struct {
 	logger logging.DebugLogger
 }
 
-// Manager handles persistence of ork state
+// Manager binds a backend to one environment ID and coordinates state and
+// artifact persistence.
 type Manager struct {
 	envID   string
 	backend Backend
 }
 
+// NewManager creates a state manager scoped to envID.
 func NewManager(envID string, backend Backend) *Manager {
 	return &Manager{envID: envID, backend: backend}
 }
 
+// New creates an empty environment state document.
 func New(envID, manifestID string, logger logging.DebugLogger) *OrkState {
 	now := time.Now().UTC().Format(time.RFC3339)
 	return &OrkState{
@@ -121,6 +135,7 @@ func New(envID, manifestID string, logger logging.DebugLogger) *OrkState {
 	}
 }
 
+// LoadOrNew loads an existing environment or creates an unsaved empty state.
 func (sm *Manager) LoadOrNew(manifestID string, logger logging.DebugLogger) (*OrkState, error) {
 	exists, err := sm.Exists(context.Background())
 	if err != nil {
@@ -138,11 +153,13 @@ func (sm *Manager) LoadOrNew(manifestID string, logger logging.DebugLogger) (*Or
 	return nil, err
 }
 
-// Load reads the state file and returns the ork state
+// Load reads the environment state from the configured backend.
 func (sm *Manager) Load() (*OrkState, error) {
 	return sm.backend.Load(context.Background(), sm.envID)
 }
 
+// UpsertComponent adds or replaces component state while preserving its
+// original provisioning timestamp.
 func (s *OrkState) UpsertComponent(component ComponentState) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	component.UpdatedAt = now
@@ -165,6 +182,7 @@ func (s *OrkState) UpsertComponent(component ComponentState) {
 	s.UpdatedAt = now
 }
 
+// FindComponent returns a copy of the named component state.
 func (s *OrkState) FindComponent(name string) (ComponentState, bool) {
 	for _, component := range s.Components {
 		if component.Name == name {
@@ -174,6 +192,9 @@ func (s *OrkState) FindComponent(name string) (ComponentState, bool) {
 	return ComponentState{}, false
 }
 
+// BeginComponentApply records destroyable manifest facts before apply-side work
+// begins. Existing payload and artifacts are preserved until replacement state
+// is safely available.
 func (s *OrkState) BeginComponentApply(component *manifestcore.Component, runnerType runners.RunnerType, workDir string, stage Stage) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	for i := range s.Components {
@@ -217,22 +238,27 @@ func (s *OrkState) BeginComponentApply(component *manifestcore.Component, runner
 	s.UpdatedAt = now
 }
 
+// MarkComponentFailed records an interrupted or failed lifecycle checkpoint.
 func (s *OrkState) MarkComponentFailed(name string, stage Stage) {
 	s.markComponentStatus(name, StatusFailed, stage)
 }
 
+// MarkComponentApplying records an in-progress apply checkpoint.
 func (s *OrkState) MarkComponentApplying(name string, stage Stage) {
 	s.markComponentStatus(name, StatusApplying, stage)
 }
 
+// MarkComponentApplied records a completed apply checkpoint.
 func (s *OrkState) MarkComponentApplied(name string, stage Stage) {
 	s.markComponentStatus(name, StatusApplied, stage)
 }
 
+// MarkComponentDestroying records an in-progress destroy checkpoint.
 func (s *OrkState) MarkComponentDestroying(name string, stage Stage) {
 	s.markComponentStatus(name, StatusDestroying, stage)
 }
 
+// MarkComponentDestroyed records a completed destroy checkpoint.
 func (s *OrkState) MarkComponentDestroyed(name string, stage Stage) {
 	s.markComponentStatus(name, StatusDestroyed, stage)
 }
@@ -260,21 +286,22 @@ func (s *OrkState) markComponentStatus(name string, status Status, stage Stage) 
 	}
 }
 
-// Save writes the ork state to the state file
+// Save writes the environment state to the configured backend.
 func (sm *Manager) Save(state *OrkState) error {
 	return sm.backend.Save(context.Background(), sm.envID, state)
 }
 
-// Exists checks if a state file exists for this environment
+// Exists reports whether the configured backend contains this environment.
 func (sm *Manager) Exists(ctx context.Context) (bool, error) {
 	return sm.backend.Exists(ctx, sm.envID)
 }
 
-// Delete removes the state file
+// Delete removes the complete environment state bundle, including artifacts.
 func (sm *Manager) Delete() error {
 	return sm.backend.Delete(context.Background(), sm.envID)
 }
 
+// NewComponentState builds the durable applied state returned by an adapter.
 func NewComponentState(
 	component *manifestcore.Component,
 	runnerType runners.RunnerType,
@@ -307,6 +334,7 @@ func destroyHooksFromComponent(component *manifestcore.Component) DestroyHooks {
 	}
 }
 
+// NewComponentStateData converts a typed adapter payload into a persistable map.
 func NewComponentStateData(workDir string, payload interface{}, artifacts ...Artifact) (ComponentStateData, error) {
 	mapped, err := ToMap(payload)
 	if err != nil {
@@ -320,6 +348,7 @@ func NewComponentStateData(workDir string, payload interface{}, artifacts ...Art
 	}, nil
 }
 
+// EmptyComponentStateData returns valid adapter state with no payload.
 func EmptyComponentStateData(workDir string) ComponentStateData {
 	return ComponentStateData{
 		WorkDir: workDir,
@@ -327,6 +356,8 @@ func EmptyComponentStateData(workDir string) ComponentStateData {
 	}
 }
 
+// ToMap converts a typed adapter payload through JSON so backend serialization
+// remains independent of adapter-specific Go types.
 func ToMap(in interface{}) (map[string]interface{}, error) {
 	if in == nil {
 		return make(map[string]interface{}), nil
@@ -352,6 +383,8 @@ func ToMap(in interface{}) (map[string]interface{}, error) {
 	return out, nil
 }
 
+// SanitizeMap recursively redacts values whose keys resemble credentials before
+// configuration is copied into state. It is a safety net, not a secret scanner.
 func SanitizeMap(in map[string]interface{}) map[string]interface{} {
 	if in == nil {
 		return nil
@@ -380,6 +413,8 @@ func SanitizeMap(in map[string]interface{}) map[string]interface{} {
 	return out
 }
 
+// IsSensitiveKey reports whether a key name matches the conservative redaction
+// heuristic used for persisted configuration.
 func IsSensitiveKey(key string) bool {
 	normalized := strings.ToLower(key)
 	sensitiveParts := []string{

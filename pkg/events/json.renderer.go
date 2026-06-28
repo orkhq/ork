@@ -5,8 +5,10 @@ import (
 	"fmt"
 )
 
+// JSONRenderer writes one machine-readable JSON event per line.
 type JSONRenderer struct{}
 
+// NewJSONRenderer creates a non-TTY event renderer.
 func NewJSONRenderer() *JSONRenderer {
 	return &JSONRenderer{}
 }

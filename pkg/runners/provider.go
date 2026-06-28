@@ -2,11 +2,15 @@ package runners
 
 import "github.com/go-viper/mapstructure/v2"
 
+// ProviderConfig translates runner-scoped provider bootstrap settings into the
+// environment inherited by component commands.
 type ProviderConfig interface {
 	IsConfigured() bool
 	BuildEnvVars() map[string]string
 }
 
+// AWSProviderConfig contains optional AWS environment values for one runner.
+// Prefer ambient runner identity over literal credentials.
 type AWSProviderConfig struct {
 	Region          string `mapstructure:"region"`
 	AccessKeyID     string `mapstructure:"access_key_id"`
@@ -31,6 +35,7 @@ func (a *AWSProviderConfig) BuildEnvVars() map[string]string {
 	return envs
 }
 
+// AggregatedProviderConfig groups provider-specific settings for one runner.
 type AggregatedProviderConfig struct {
 	AWS *AWSProviderConfig `mapstructure:"aws,omitempty"`
 }
@@ -46,6 +51,8 @@ func (a *AggregatedProviderConfig) GetAllEnvVars() map[string]string {
 	return envs
 }
 
+// RetrieveProviderConfigForRunner decodes provider settings and returns the
+// environment to apply to commands executed by that runner.
 func RetrieveProviderConfigForRunner(config map[string]interface{}) (map[string]string, *AggregatedProviderConfig, error) {
 	var pcfg AggregatedProviderConfig
 	if err := mapstructure.Decode(config, &pcfg); err != nil {

@@ -10,10 +10,13 @@ import (
 	manifestparsers "ork/pkg/manifest/parsers"
 )
 
+// VersionedManifest is the minimal envelope needed to select a parser.
 type VersionedManifest struct {
 	Version string `yaml:"version"`
 }
 
+// Load reads a manifest, selects its versioned parser, and returns the canonical
+// core representation.
 func Load(path string, logger logging.Logger) (*manifestcore.Manifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
